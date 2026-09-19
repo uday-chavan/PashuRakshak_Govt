@@ -1,0 +1,784 @@
+/* ============================================================
+   Hotspot Map page — Maharashtra Disease Intelligence Map
+   ============================================================ */
+
+.hm-page {
+  margin-top: 2px;
+}
+
+.hm-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  animation: cardEntrance 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hm-caption {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Header ---------- */
+.hm-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 18px;
+  animation: pageFadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hm-title-block {
+  min-width: 0;
+}
+
+.hm-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hm-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.hm-title svg {
+  color: var(--green-700);
+}
+
+.hm-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--green-700);
+  background: var(--green-50);
+  border: 1px solid var(--green-200);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.hm-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green-500);
+}
+
+.hm-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 6px;
+  max-width: 560px;
+}
+
+.hm-head-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* ---------- Mode switcher ---------- */
+.hm-mode-switch {
+  display: inline-flex;
+  background: var(--green-50);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.hm-mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hm-mode-btn:hover {
+  color: var(--green-700);
+}
+
+.hm-mode-btn.active {
+  background: var(--white);
+  color: var(--green-700);
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Filters ---------- */
+.hm-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.hm-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hm-filter label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.hm-filter select {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--white);
+  outline: none;
+  min-width: 150px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+  appearance: auto;
+}
+
+.hm-filter select:focus {
+  border-color: var(--green-500);
+}
+
+/* ---------- Body layout ---------- */
+.hm-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 0;
+  align-items: stretch;
+}
+
+.hm-map-column {
+  min-width: 0;
+}
+
+.hm-map-column .mh-svg {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+.hm-map-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.hm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.hm-lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.hm-summary {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ---------- Areas needing attention ---------- */
+.hm-attention {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.hm-attention-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  padding: 10px 14px;
+  background: var(--green-50);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.hm-attention-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--white);
+  padding: 9px 14px;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  animation: tableRowEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hm-attention-item:nth-child(1) { animation-delay: 0.08s; }
+.hm-attention-item:nth-child(2) { animation-delay: 0.14s; }
+.hm-attention-item:nth-child(3) { animation-delay: 0.20s; }
+
+.hm-attention-item:last-child {
+  border-bottom: none;
+}
+
+.hm-attention-item:hover {
+  background: var(--green-50);
+}
+
+.hm-attention-item.active {
+  background: var(--green-50);
+}
+
+.hm-attention-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.hm-attention-name {
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 64px;
+}
+
+.hm-attention-note {
+  flex: 1;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.hm-attention-view {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green-700);
+  padding: 4px 10px;
+  border-radius: 7px;
+  background: var(--green-50);
+}
+
+.hm-attention-view.active {
+  background: var(--green-100);
+}
+
+/* ---------- District intelligence panel ---------- */
+.hm-detail-panel {
+  border-left: 1px solid var(--line);
+  margin-left: 18px;
+  padding-left: 18px;
+  min-width: 0;
+  animation: cardEntrance 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.12s;
+}
+
+.hm-detail {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hm-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.hm-detail-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.hm-detail-close {
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  background: var(--line-soft);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hm-detail-close:hover {
+  background: var(--red-100);
+  color: var(--red-600);
+}
+
+.hm-detail-district {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hm-detail-dist-name {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.hm-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+
+.hm-intel-disease {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--green-50);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  padding: 4px 11px;
+  margin-bottom: 14px;
+}
+
+.hm-intel-disease-ic {
+  display: grid;
+  place-items: center;
+  color: var(--green-700);
+}
+
+/* Metrics grid */
+.hm-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.hm-metric {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--green-50);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  padding: 10px 11px;
+}
+
+.hm-metric-ic {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--white);
+  color: var(--green-700);
+  border: 1px solid var(--line);
+  flex: none;
+}
+
+.hm-metric-v {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.hm-metric-k {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* Recent activity */
+.hm-sec-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.hm-activity {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.hm-activity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 11px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: var(--white);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.hm-activity-row:last-child {
+  border-bottom: none;
+}
+
+.hm-activity-delta {
+  font-weight: 700;
+  color: var(--red-600);
+}
+
+.hm-activity-delta.flat {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Footer: trend + actions */
+.hm-foot {
+  margin-top: auto;
+}
+
+.hm-trend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.hm-sec-label {
+  margin-bottom: 0;
+}
+
+.hm-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.hm-trend-up {
+  color: var(--red-600);
+}
+
+.hm-trend-down {
+  color: var(--green-700);
+}
+
+.hm-trend-flat {
+  color: var(--muted);
+}
+
+.hm-actions {
+  display: flex;
+  gap: 9px;
+}
+
+.hm-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+.hm-detail-note {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--muted-light);
+}
+
+/* Empty state */
+.hm-detail-empty {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.hm-empty-ic {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--green-50);
+  color: var(--green-700);
+  margin-bottom: 8px;
+}
+
+.hm-empty-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.hm-empty-text {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* ---------- Period note ---------- */
+.hm-period-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .hm-body {
+    grid-template-columns: 1fr;
+  }
+
+  .hm-detail-panel {
+    border-left: none;
+    border-top: 1px solid var(--line);
+    margin-top: 16px;
+    margin-left: 0;
+    padding-left: 0;
+    padding-top: 16px;
+  }
+
+  .hm-map-column .mh-svg {
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+  }
+
+  .hm-detail {
+    height: auto;
+  }
+}
+
+@media (max-width: 700px) {
+  .hm-card {
+    padding: 14px;
+  }
+
+  .hm-head {
+    flex-direction: column;
+  }
+
+  .hm-head-right {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .hm-mode-switch {
+    justify-content: stretch;
+  }
+
+  .hm-mode-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .hm-filters {
+    width: 100%;
+  }
+
+  .hm-filter {
+    flex: 1 1 140px;
+  }
+
+  .hm-filter select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hm-map-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ---------- District Intelligence Case & Village Breakdown ---------- */
+.hm-case-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-top: 8px;
+}
+
+.hm-case-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.hm-case-list::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+
+.hm-case-item {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green-700);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.hm-case-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.hm-case-item.status-active {
+  border-left-color: #dc2626;
+}
+
+.hm-case-item.status-treatment {
+  border-left-color: #d97706;
+}
+
+.hm-case-item.status-resolved {
+  border-left-color: #10b981;
+}
+
+.hm-case-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hm-case-ref-tag {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-weight: 700;
+  font-size: 11.5px;
+  color: #0f172a;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.hm-case-animal-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.35;
+}
+
+.hm-case-location {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.hm-case-pin-ic {
+  color: #059669;
+  flex-shrink: 0;
+}
+
+.hm-case-location strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.hm-case-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 2px;
+}
+
+.hm-case-disease-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.hm-case-coords {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  color: #94a3b8;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.hm-zero-cases-banner {
+  background: var(--green-50);
+  border: 1px solid var(--green-200);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--green-900);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.hm-zero-cases-title {
+  font-weight: 700;
+  color: var(--green-700);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
