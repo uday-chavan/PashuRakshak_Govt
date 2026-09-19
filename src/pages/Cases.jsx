@@ -121,7 +121,6 @@ export default function Cases() {
       <div className="page-head">
         <div className="flex-between">
           <div>
-            <div className="meta-line">PashuRakshak · Neon PostgreSQL Live Registry</div>
             <h1>Case Management</h1>
             <p>
               Track individual animal health records, location telemetry, symptoms, and treatment regimens in real-time.
@@ -137,7 +136,7 @@ export default function Cases() {
                 fontWeight: 700,
               }}
             >
-              <Database size={13} /> Neon DB Connected
+              <Database size={13} /> From Central Database
             </span>
             <button
               type="button"
@@ -153,79 +152,86 @@ export default function Cases() {
         </div>
       </div>
 
-      <div className="card-head">
-        <div className="card-title">
-          Live Case Registry (<AnimatedNumber value={filtered.length} /> Cases)
-        </div>
-        <div className="filter-bar" style={{ padding: 0, border: 'none', boxShadow: 'none', marginBottom: 0 }}>
-          <div className="field">
-            <label>Filter by Status</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+      <div className="card cases-card-container">
+        <div className="card-head" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+            <ClipboardList size={16} style={{ verticalAlign: '-2px' }} />
+            {'Live Case Registry ('}<AnimatedNumber value={filtered.length} />{' Cases)'}
+          </div>
+          <div>
+            <select
+              className="cases-filter-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter cases by status"
+            >
               {statusFilterOptions.map((s) => (
-                <option key={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s === 'All' ? 'All Statuses' : s}
+                </option>
               ))}
             </select>
           </div>
         </div>
-      </div>
 
-      <div className="table-wrap">
-        <table className="dash-table">
-          <thead>
-            <tr>
-              <th>Case ID</th>
-              <th>Animal</th>
-              <th>Location (Village / District)</th>
-              <th>Coordinates (Lat, Long)</th>
-              <th>Suspected / Confirmed Disease</th>
-              <th>Status</th>
-              <th>Date / Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((c) => {
-              const caseIdDisplay = c.case_ref || c.caseRef || (c.id && typeof c.id === 'string' && c.id.startsWith('CS-') ? c.id : `CS-260${c.id}`);
-              const animalDisplay = c.animal || 'Livestock';
-              const villageDisplay = c.village_area || c.village || c.villageArea || 'Area Sector';
-              const districtDisplay = c.district || 'Maharashtra';
-              const coordsDisplay = formatCoords(c.latitude, c.longitude, 4);
-              const diseaseDisplay = c.confirmed_disease || c.suspected_disease || c.disease || c.suspectedDisease || 'Observation';
-              const statusDisplay = c.status || 'Active';
-              const dateDisplay = formatDate(c.last_updated || c.lastUpdated || c.date_time || c.created_at);
+        <div className="table-wrap cases-table-wrap">
+          <table className="dash-table">
+            <thead>
+              <tr>
+                <th>Case ID</th>
+                <th>Animal</th>
+                <th>Location (Village / District)</th>
+                <th>Coordinates (Lat, Long)</th>
+                <th>Suspected / Confirmed Disease</th>
+                <th>Status</th>
+                <th>Date / Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((c) => {
+                const caseIdDisplay = c.case_ref || c.caseRef || (c.id && typeof c.id === 'string' && c.id.startsWith('CS-') ? c.id : `CS-260${c.id}`);
+                const animalDisplay = c.animal || 'Livestock';
+                const villageDisplay = c.village_area || c.village || c.villageArea || 'Area Sector';
+                const districtDisplay = c.district || 'Maharashtra';
+                const coordsDisplay = formatCoords(c.latitude, c.longitude, 4);
+                const diseaseDisplay = c.confirmed_disease || c.suspected_disease || c.disease || c.suspectedDisease || 'Observation';
+                const statusDisplay = c.status || 'Active';
+                const dateDisplay = formatDate(c.last_updated || c.lastUpdated || c.date_time || c.created_at);
 
-              return (
-                <tr key={c.id || caseIdDisplay} className="clickable" onClick={() => handleSelectCase(c)}>
-                  <td className="cell-main">{caseIdDisplay}</td>
-                  <td style={{ fontWeight: 600 }}>{animalDisplay}</td>
-                  <td>
-                    <strong>{villageDisplay}</strong>
-                    <span className="cell-sub">{districtDisplay}</span>
-                  </td>
-                  <td>
-                    <span style={{ fontFamily: 'monospace', fontSize: 11.5, color: '#0f172a', fontWeight: 600 }}>
-                      {coordsDisplay}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="pill pill-neutral" style={{ fontWeight: 700 }}>
-                      {diseaseDisplay}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`pill ${caseStatusPill[statusDisplay] || 'pill-neutral'}`}>
-                      {statusDisplay}
-                    </span>
-                  </td>
-                  <td>{dateDisplay}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr key={c.id || caseIdDisplay} className="clickable" onClick={() => handleSelectCase(c)}>
+                    <td className="cell-main">{caseIdDisplay}</td>
+                    <td style={{ fontWeight: 600 }}>{animalDisplay}</td>
+                    <td>
+                      <strong>{villageDisplay}</strong>
+                      <span className="cell-sub">{districtDisplay}</span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontSize: 11.5, color: '#0f172a', fontWeight: 600 }}>
+                        {coordsDisplay}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="pill pill-neutral" style={{ fontWeight: 700 }}>
+                        {diseaseDisplay}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`pill ${caseStatusPill[statusDisplay] || 'pill-neutral'}`}>
+                        {statusDisplay}
+                      </span>
+                    </td>
+                    <td>{dateDisplay}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="data-note" style={{ marginTop: 10 }}>
+          <AnimatedNumber value={filtered.length} /> live records loaded from PostgreSQL database. Click any row to view complete symptoms, treatment protocols, and GPS telemetry.
+        </p>
       </div>
-      <p className="data-note">
-        <AnimatedNumber value={filtered.length} /> live records loaded from PostgreSQL database. Click any row to view complete symptoms, treatment protocols, and GPS telemetry.
-      </p>
 
       <Modal
         open={!!selectedCase}
@@ -290,30 +296,30 @@ export default function Cases() {
                 </div>
               </div>
 
-              <div className="mt-22">
-                <div className="card-title" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+              <div style={{ marginTop: 12 }}>
+                <div className="card-title" style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
                   Symptoms &amp; Clinical Presentation
                 </div>
-                <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1.5px solid #cbd5e1', fontSize: 13, color: '#0f172a', lineHeight: 1.5 }}>
+                <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', lineHeight: 1.4 }}>
                   {modalSymptoms}
                 </div>
               </div>
 
-              <div className="mt-22">
-                <div className="card-title" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+              <div style={{ marginTop: 12 }}>
+                <div className="card-title" style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
                   Disease Under Treatment &amp; Regimen
                 </div>
-                <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1.5px solid #cbd5e1', fontSize: 13, color: '#0f172a', lineHeight: 1.5 }}>
+                <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', lineHeight: 1.4 }}>
                   {modalTreatment}
                 </div>
               </div>
 
-              <div className="mt-22">
-                <div className="card-title" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
+              <div style={{ marginTop: 12 }}>
+                <div className="card-title" style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
                   Case Audit &amp; Surveillance Timeline
                 </div>
                 {timelineLoading ? (
-                  <div style={{ fontSize: 12, color: 'var(--muted)', padding: '8px 0' }}>Loading timeline events...</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--muted)', padding: '6px 0' }}>Loading timeline events...</div>
                 ) : caseTimeline.length > 0 ? (
                   <ul className="timeline">
                     {caseTimeline.map((t, i) => (

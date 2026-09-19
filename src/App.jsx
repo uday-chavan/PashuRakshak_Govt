@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './components/Sidebar.css';
 import './components/Topbar.css';
 import './pages/HotspotMap.css';
@@ -11,6 +11,7 @@ import Cases from './pages/Cases.jsx';
 import Vaccination from './pages/Vaccination.jsx';
 import Laboratory from './pages/Laboratory.jsx';
 import Alerts from './pages/Alerts.jsx';
+import NotificationToast from './components/NotificationToast.jsx';
 
 const PAGES = {
   overview: Overview,
@@ -30,6 +31,16 @@ function getPageFromHash() {
 export default function App() {
   const [page, setPage] = useState(getPageFromHash);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // ── Notification events (array of {disease, district, count}) ─────────
+  // Each time Overview detects new DB cases it calls onNewCases([...events])
+  // We use a wrapper object { id, events } so passing the same disease events
+  // twice still creates a new reference and triggers the toast useEffect.
+  const [notifPayload, setNotifPayload] = useState(null);
+
+  const handleNewCases = useCallback((events) => {
+    setNotifPayload({ id: Date.now(), events });
+  }, []);
 
   // Sync page → hash whenever user navigates via sidebar/buttons
   const handleNavigate = (newPage) => {
@@ -58,10 +69,16 @@ export default function App() {
         <Topbar page={page} onMenu={() => setMobileOpen(true)} />
         <main className="main-content">
           <div key={page} className="page-wrapper page-enter">
-            <ActivePage onNavigate={handleNavigate} />
+            <ActivePage
+              onNavigate={handleNavigate}
+              onNewCases={page === 'overview' ? handleNewCases : undefined}
+            />
           </div>
         </main>
       </div>
+
+      {/* Global notification toast stack — persists across page changes */}
+      <NotificationToast events={notifPayload?.events || []} />
     </div>
   );
 }

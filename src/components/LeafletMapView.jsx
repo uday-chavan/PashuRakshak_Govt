@@ -107,6 +107,7 @@ export default function LeafletMapView({
   mode = 'risk',
   height = 500,
   showControls = true,
+  storageKey = 'pashurakshak_map_view',
 }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -116,11 +117,57 @@ export default function LeafletMapView({
   const districtPolygonRef = useRef(null);    // selected district highlight
   const allBordersLayerRef = useRef(null);    // all 36 district outlines
   const bufferCirclesRef = useRef([]);
+  const isFirstMountRef = useRef(true);
+  const prevSelectedRef = useRef(selected);
 
-  const [tileMode, setTileMode] = useState('satellite');
-  const [showLabels, setShowLabels] = useState(true);
-  const [showBorders, setShowBorders] = useState(true);
-  const [showBufferZones, setShowBufferZones] = useState(true);
+  const [tileMode, setTileMode] = useState(() => {
+    try {
+      return localStorage.getItem('pashurakshak_map_tilemode') || 'satellite';
+    } catch {
+      return 'satellite';
+    }
+  });
+  const [showLabels, setShowLabels] = useState(() => {
+    try {
+      const s = localStorage.getItem('pashurakshak_map_labels');
+      return s !== null ? s === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+  const [showBorders, setShowBorders] = useState(() => {
+    try {
+      const s = localStorage.getItem('pashurakshak_map_borders');
+      return s !== null ? s === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+  const [showBufferZones, setShowBufferZones] = useState(() => {
+    try {
+      const s = localStorage.getItem('pashurakshak_map_buffer');
+      return s !== null ? s === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Persist layer toggle preferences
+  useEffect(() => {
+    try { localStorage.setItem('pashurakshak_map_tilemode', tileMode); } catch {}
+  }, [tileMode]);
+
+  useEffect(() => {
+    try { localStorage.setItem('pashurakshak_map_labels', String(showLabels)); } catch {}
+  }, [showLabels]);
+
+  useEffect(() => {
+    try { localStorage.setItem('pashurakshak_map_borders', String(showBorders)); } catch {}
+  }, [showBorders]);
+
+  useEffect(() => {
+    try { localStorage.setItem('pashurakshak_map_buffer', String(showBufferZones)); } catch {}
+  }, [showBufferZones]);
 
   // ── Apply all district borders from GeoJSON ───────────────────────────────
   const applyAllBorders = useCallback((map) => {
@@ -170,12 +217,52 @@ export default function LeafletMapView({
   useEffect(() => {
     if (mapRef.current || !mapContainerRef.current) return;
 
+    let initialCenter = [MAHARASHTRA_CENTER.lat, MAHARASHTRA_CENTER.lng];
+    let initialZoom = MAHARASHTRA_DEFAULT_ZOOM;
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          parsed &&
+          typeof parsed.lat === 'number' &&
+          !isNaN(parsed.lat) &&
+          typeof parsed.lng === 'number' &&
+          !isNaN(parsed.lng) &&
+          typeof parsed.zoom === 'number' &&
+          !isNaN(parsed.zoom)
+        ) {
+          initialCenter = [parsed.lat, parsed.lng];
+          initialZoom = parsed.zoom;
+        }
+      }
+    } catch {}
+
     const map = L.map(mapContainerRef.current, {
-      center: [MAHARASHTRA_CENTER.lat, MAHARASHTRA_CENTER.lng],
-      zoom: MAHARASHTRA_DEFAULT_ZOOM,
+      center: initialCenter,
+      zoom: initialZoom,
       zoomControl: false,
       attributionControl: true,
     });
+
+    // Save map view on user interaction (pan / zoom)
+    const handleViewChange = () => {
+      if (!map) return;
+      try {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        if (center && typeof zoom === 'number') {
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({ lat: center.lat, lng: center.lng, zoom })
+          );
+        }
+      } catch {}
+    };
+
+    map.on('moveend', handleViewChange);
+    map.on('zoomend', handleViewChange);
 
     // Add zoom control bottom-right
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -199,11 +286,13 @@ export default function LeafletMapView({
     applyAllBorders(map);
 
     return () => {
+      map.off('moveend', handleViewChange);
+      map.off('zoomend', handleViewChange);
       map.remove();
       mapRef.current = null;
       allBordersLayerRef.current = null;
     };
-  }, [applyAllBorders]);
+  }, [applyAllBorders, storageKey]);
 
   // ── Update borders when showBorders changes ────────────────────────────────
   useEffect(() => {
@@ -259,7 +348,34 @@ export default function LeafletMapView({
     bufferCirclesRef.current.forEach((c) => c.remove());
     bufferCirclesRef.current = [];
 
-    // District centroid markers
+    // 1. Case pin markers (diamond) — lower z-index
+    casePins.forEach((pin) => {
+      if (!pin.lat || !pin.lng) return;
+      const marker = L.marker([pin.lat, pin.lng], {
+        icon: caseIcon(pin.status),
+        zIndexOffset: 100,
+        title: `${pin.caseRef} — ${pin.animal}`,
+      }).addTo(map);
+
+      const caseHtml = `
+        <div class="lmap-infowindow">
+          <div class="lmap-info-header">
+            <div class="lmap-info-title">${pin.caseRef}</div>
+            <span class="lmap-badge lmap-badge-case">${pin.status}</span>
+          </div>
+          <div class="lmap-info-body">
+            <div class="lmap-stat-row"><span class="label">Animal:</span><span class="val">${pin.animal}</span></div>
+            <div class="lmap-stat-row"><span class="label">Disease:</span><span class="val danger">${pin.disease || 'Suspected'}</span></div>
+            <div class="lmap-stat-row"><span class="label">Village:</span><span class="val">${pin.village || '—'}, ${pin.district}</span></div>
+            <div class="lmap-stat-row"><span class="label">Vet:</span><span class="val">${pin.vet || '—'}</span></div>
+          </div>
+        </div>`;
+
+      marker.bindPopup(caseHtml, { className: 'lmap-popup', maxWidth: 240 });
+      markersRef.current.push(marker);
+    });
+
+    // 2. District centroid markers — always on top of case pins
     districts.forEach((dist) => {
       const distName  = dist.district || dist.name || '';
       const canonical = normalizeDistrictName(distName);
@@ -289,7 +405,7 @@ export default function LeafletMapView({
 
       const marker = L.marker([coordObj.lat, coordObj.lng], {
         icon: districtIcon(risk, isSelected),
-        zIndexOffset: isSelected ? 1000 : 0,
+        zIndexOffset: isSelected ? 3000 : 2000,
         title: distName,
       }).addTo(map);
 
@@ -316,33 +432,6 @@ export default function LeafletMapView({
 
       markersRef.current.push(marker);
     });
-
-    // 3. Case pin markers (diamond)
-    casePins.forEach((pin) => {
-      if (!pin.lat || !pin.lng) return;
-      const marker = L.marker([pin.lat, pin.lng], {
-        icon: caseIcon(pin.status),
-        zIndexOffset: 500,
-        title: `${pin.caseRef} — ${pin.animal}`,
-      }).addTo(map);
-
-      const caseHtml = `
-        <div class="lmap-infowindow">
-          <div class="lmap-info-header">
-            <div class="lmap-info-title">${pin.caseRef}</div>
-            <span class="lmap-badge lmap-badge-case">${pin.status}</span>
-          </div>
-          <div class="lmap-info-body">
-            <div class="lmap-stat-row"><span class="label">Animal:</span><span class="val">${pin.animal}</span></div>
-            <div class="lmap-stat-row"><span class="label">Disease:</span><span class="val danger">${pin.disease || 'Suspected'}</span></div>
-            <div class="lmap-stat-row"><span class="label">Village:</span><span class="val">${pin.village || '—'}, ${pin.district}</span></div>
-            <div class="lmap-stat-row"><span class="label">Vet:</span><span class="val">${pin.vet || '—'}</span></div>
-          </div>
-        </div>`;
-
-      marker.bindPopup(caseHtml, { className: 'lmap-popup', maxWidth: 240 });
-      markersRef.current.push(marker);
-    });
   }, [districts, casePins, selected, showBufferZones, onSelect]);
 
   useEffect(() => {
@@ -366,10 +455,27 @@ export default function LeafletMapView({
     }
 
     if (!selected) {
-      // Return to default Maharashtra view when deselected
-      map.setView([MAHARASHTRA_CENTER.lat, MAHARASHTRA_CENTER.lng], MAHARASHTRA_DEFAULT_ZOOM);
+      // Only reset view to default if this is NOT initial mount AND user actually had a selection before
+      if (!isFirstMountRef.current && prevSelectedRef.current) {
+        map.setView([MAHARASHTRA_CENTER.lat, MAHARASHTRA_CENTER.lng], MAHARASHTRA_DEFAULT_ZOOM);
+        try {
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              lat: MAHARASHTRA_CENTER.lat,
+              lng: MAHARASHTRA_CENTER.lng,
+              zoom: MAHARASHTRA_DEFAULT_ZOOM,
+            })
+          );
+        } catch {}
+      }
+      prevSelectedRef.current = selected;
+      isFirstMountRef.current = false;
       return;
     }
+
+    prevSelectedRef.current = selected;
+    isFirstMountRef.current = false;
 
     const canonicalSelected = normalizeDistrictName(
       typeof selected === 'string' ? selected : (selected.district || selected.name || '')
@@ -410,7 +516,7 @@ export default function LeafletMapView({
     // Centroid fallback if no feature matched
     const coord = DISTRICT_COORDINATES[selected] || DISTRICT_COORDINATES[normalizeDistrictName(selected)];
     if (coord) map.setView([coord.lat, coord.lng], 10);
-  }, [selected]);
+  }, [selected, storageKey]);
 
   const resetView = useCallback(() => {
     if (mapRef.current) {
@@ -419,9 +525,19 @@ export default function LeafletMapView({
         districtPolygonRef.current = null;
       }
       mapRef.current.setView([MAHARASHTRA_CENTER.lat, MAHARASHTRA_CENTER.lng], MAHARASHTRA_DEFAULT_ZOOM);
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            lat: MAHARASHTRA_CENTER.lat,
+            lng: MAHARASHTRA_CENTER.lng,
+            zoom: MAHARASHTRA_DEFAULT_ZOOM,
+          })
+        );
+      } catch {}
       if (onSelect) onSelect(null);
     }
-  }, [onSelect]);
+  }, [onSelect, storageKey]);
 
   // ── Escape key listener to deselect and return to default map view ──────────
   useEffect(() => {

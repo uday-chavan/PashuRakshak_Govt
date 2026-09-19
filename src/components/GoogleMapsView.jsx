@@ -390,6 +390,7 @@ export default function GoogleMapsView({
         map: map,
         title: dist.district,
         icon: svgMarker,
+        zIndex: isSelected ? 3000 : 2000,
         label: {
           text: markerBadge ? String(markerBadge).slice(0, 4) : '',
           color: '#ffffff',

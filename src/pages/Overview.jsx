@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Sparkles } from 'lucide-react';
 import StatCard from '../components/StatCard.jsx';
 import SimpleChart from '../components/SimpleChart.jsx';
 import LeafletMapView from '../components/LeafletMapView.jsx';
@@ -6,11 +7,13 @@ import MapErrorBoundary from '../components/MapErrorBoundary.jsx';
 import AlertPanel from '../components/AlertPanel.jsx';
 import {
   overviewStats,
-  importantAlerts,
+  importantAlerts as defaultImportantAlerts,
   hotspotDistricts as mockHotspotDistricts,
   diseaseActivity,
 } from '../data/mockData.js';
 import { getAnimalCases, getHotspotDistricts } from '../db/client.js';
+import { generateAllDiseaseAlerts } from '../services/geminiAlertService.js';
+import { startPolling, stopPolling, subscribe, resetPolling } from '../services/pollingService.js';
 
 const chartData = diseaseActivity.map((d) => ({
   label: d.month,
@@ -25,63 +28,150 @@ const statusPill = {
   Pending: 'pill-neutral',
 };
 
-export default function Overview() {
+export default function Overview({ onNewCases }) {
   const [selected, setSelected] = useState(null);
   const [liveDistricts, setLiveDistricts] = useState(mockHotspotDistricts);
   const [liveRecentCases, setLiveRecentCases] = useState([]);
   const [casePins, setCasePins] = useState([]);
   const [casesLoading, setCasesLoading] = useState(true);
+  const [alerts, setAlerts] = useState(defaultImportantAlerts);
+  const [aiAlertsLoading, setAiAlertsLoading] = useState(false);
 
+  // ── Helper: build map pins from raw cases ──────────────────────────────
+  const buildPins = useCallback((data) =>
+    data
+      .filter((c) => c.latitude && c.longitude)
+      .map((c) => ({
+        id: c.id,
+        caseRef: c.case_ref,
+        lat: parseFloat(c.latitude),
+        lng: parseFloat(c.longitude),
+        animal: c.animal,
+        village: c.village_area,
+        district: c.district,
+        disease: c.suspected_disease || c.confirmed_disease,
+        status: c.status,
+        vet: c.assigned_vet,
+        dateTime: c.date_time || c.dateTime || c.date || c.created_at,
+      })),
+  []);
+
+  // ── Helper: refresh all live data from DB ─────────────────────────────
+  const refreshFromDB = useCallback(async () => {
+    try {
+      const [casesData, districtsData] = await Promise.all([
+        getAnimalCases(),
+        getHotspotDistricts(),
+      ]);
+
+      setLiveRecentCases(casesData.slice(0, 5));
+      const pins = buildPins(casesData);
+      setCasePins(pins);
+
+      if (districtsData && districtsData.length > 0) {
+        setLiveDistricts(districtsData);
+      }
+    } catch (err) {
+      console.warn('[Overview] refreshFromDB error:', err);
+    }
+  }, [buildPins]);
+
+  // ── Initial data load ─────────────────────────────────────────────────
   useEffect(() => {
-    // Fetch live hotspot districts from DB
     getHotspotDistricts()
       .then((data) => {
-        if (data && data.length > 0) {
-          setLiveDistricts(data);
-        }
+        if (data && data.length > 0) setLiveDistricts(data);
       })
       .catch((err) => console.warn('[Overview] getHotspotDistricts fallback:', err));
 
-    // Fetch live animal cases from DB
     getAnimalCases()
       .then((data) => {
         setLiveRecentCases(data.slice(0, 5));
-        // Build pin data for map — only cases with valid coordinates
-        setCasePins(
-          data
-            .filter((c) => c.latitude && c.longitude)
-            .map((c) => ({
-              id: c.id,
-              caseRef: c.case_ref,
-              lat: parseFloat(c.latitude),
-              lng: parseFloat(c.longitude),
-              animal: c.animal,
-              village: c.village_area,
-              district: c.district,
-              disease: c.suspected_disease || c.confirmed_disease,
-              status: c.status,
-              vet: c.assigned_vet,
-            }))
-        );
+        setCasePins(buildPins(data));
       })
       .catch(() => { setLiveRecentCases([]); setCasePins([]); })
       .finally(() => setCasesLoading(false));
-  }, []);
+  }, [buildPins]);
 
-  // Escape key listener to clear selection & return map to default
+  // ── Polling: start background check on mount, stop on unmount ─────────
+  useEffect(() => {
+    resetPolling(); // re-establish baseline when component mounts
+
+    const unsub = subscribe(async ({ newCases, allCases }) => {
+      // 1. Refresh map pins and recent cases table
+      setLiveRecentCases(allCases.slice(0, 5));
+      const pins = buildPins(allCases);
+      setCasePins(pins);
+
+      // 2. Re-fetch districts to get updated hotspot risk levels
+      getHotspotDistricts()
+        .then((d) => { if (d && d.length > 0) setLiveDistricts(d); })
+        .catch(() => {});
+
+      // 3. Bubble new case events up to App-level notification system
+      if (onNewCases && newCases.length > 0) {
+        // Group new cases by disease for the notification payload
+        const diseaseMap = new Map();
+        newCases.forEach((c) => {
+          const disease = c.suspected_disease || c.confirmed_disease || 'Undiagnosed Condition';
+          const district = c.district || 'Maharashtra';
+          const key = `${disease}__${district}`;
+          if (!diseaseMap.has(key)) {
+            diseaseMap.set(key, { disease, district, count: 0, latestDate: c.date_time });
+          }
+          diseaseMap.get(key).count += 1;
+        });
+        onNewCases([...diseaseMap.values()]);
+      }
+    });
+
+    startPolling();
+
+    return () => {
+      unsub();
+      stopPolling();
+    };
+  }, [buildPins, onNewCases]);
+
+  // ── Regenerate alerts whenever case pins or districts update ──────────
+  useEffect(() => {
+    try {
+      const newAlerts = generateAllDiseaseAlerts(casePins, liveDistricts);
+      if (newAlerts && newAlerts.length > 0) {
+        setAlerts(newAlerts);
+      }
+    } catch (err) {
+      console.warn('[Overview] Alert generation error:', err);
+    }
+  }, [casePins, liveDistricts]);
+
+  // ── Escape key to clear selection ─────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setSelected(null);
-      }
+      if (e.key === 'Escape') setSelected(null);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+
   const selectedDistrict = selected
     ? liveDistricts.find((d) => (d.district || d.name) === (selected.district || selected.name))
     : null;
+
+  const handleViewOnMap = (districtName) => {
+    if (!districtName) return;
+    const match = liveDistricts.find(
+      (d) => (d.district || d.name || '').toLowerCase() === districtName.toLowerCase()
+    );
+    setSelected(match || { district: districtName, name: districtName, risk: 'normal' });
+
+    // Smooth scroll to map card
+    const mapCard = document.getElementById('overview-map-card');
+    if (mapCard) {
+      mapCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   return (
     <div>
@@ -97,7 +187,7 @@ export default function Overview() {
       </div>
 
       <div className="grid-1-2 mt-22">
-        <div className="card">
+        <div className="card" id="overview-map-card">
           <div className="card-head">
             <div>
               <div className="card-title">Maharashtra Disease Hotspot Map</div>
@@ -114,6 +204,7 @@ export default function Overview() {
               selected={selectedDistrict?.district || selectedDistrict?.name}
               height={440}
               onSelect={(d) => setSelected(d)}
+              storageKey="pashurakshak_overview_map_view"
             />
           </MapErrorBoundary>
           <div className="legend mt-18" style={{ flexWrap: 'wrap', gap: '10px 18px' }}>
@@ -168,12 +259,33 @@ export default function Overview() {
 
         <div className="card card-alerts">
           <div className="card-head">
-            <div>
-              <div className="card-title">Important Alerts</div>
-              <div className="card-subtitle">Categorized by urgency level &amp; real-time updates</div>
+            <div style={{ width: '100%' }}>
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Important Alerts</span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    background: '#e0f2fe',
+                    color: '#0369a1',
+                    border: '1px solid #bae6fd',
+                    borderRadius: 12,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '2px 8px',
+                  }}
+                >
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0284c7', display: 'inline-block' }} />
+                  Live
+                </span>
+              </div>
+              <div className="card-subtitle">
+                Categorized by urgency level &amp; real-time surveillance updates
+              </div>
             </div>
           </div>
-          <AlertPanel alerts={importantAlerts} />
+          <AlertPanel alerts={alerts} onViewOnMap={handleViewOnMap} />
         </div>
       </div>
 

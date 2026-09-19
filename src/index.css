@@ -49,6 +49,12 @@
   --amber-100: #fef3c7;
   --amber-50: #fffbeb;
 
+  --orange-700: #c2410c;
+  --orange-600: #f59e0b;
+  --orange-500: #f97316;
+  --orange-100: #ffedd5;
+  --orange-50: #fff7ed;
+
   --sky-700: #1d4ed8;
   --sky-600: #2563eb;
   --sky-100: #dbeafe;
@@ -572,21 +578,22 @@ textarea {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(16, 35, 29, 0.5);
+  background: rgba(16, 35, 29, 0.45);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 16px;
   z-index: 90;
 }
 
 .modal {
   background: var(--white);
-  border-radius: 14px;
-  box-shadow: var(--shadow-md);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
   width: 100%;
-  max-width: 620px;
-  max-height: 88vh;
+  max-width: 480px;
+  max-height: 82vh;
   overflow-y: auto;
 }
 
@@ -594,37 +601,40 @@ textarea {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
-  padding: 20px 24px 16px;
+  gap: 12px;
+  padding: 14px 18px 12px;
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
   background: var(--white);
-  border-radius: 14px 14px 0 0;
+  border-radius: 12px 12px 0 0;
+  z-index: 5;
 }
 
 .modal-head h3 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--ink);
 }
 
 .modal-sub {
-  font-size: 12.5px;
+  font-size: 11.5px;
   color: var(--muted);
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
 .modal-close {
   border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
   background: var(--line-soft);
   color: var(--muted);
+  cursor: pointer;
   transition: background 0.15s ease;
+  flex-shrink: 0;
 }
 
 .modal-close:hover {
@@ -633,36 +643,39 @@ textarea {
 }
 
 .modal-body {
-  padding: 20px 24px 24px;
+  padding: 14px 18px 18px;
 }
 
 /* ---------- Detail grid / items ---------- */
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 8px;
 }
 
 .detail-item {
   background: var(--green-50);
   border: 1px solid var(--line-soft);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  border-radius: 6px;
+  padding: 8px 10px;
 }
 
 .detail-item .k {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--muted);
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .detail-item .v {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 /* ---------- Timeline ---------- */
@@ -852,13 +865,16 @@ textarea {
 }
 
 .urgency-pill {
-  display: inline-block;
-  padding: 2px 7px;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 3px 8px;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  border-radius: 4px;
+  border-radius: 5px;
+  line-height: 1.2;
 }
 
 .pill-critical {
@@ -965,6 +981,35 @@ textarea {
   color: var(--muted);
 }
 
+.alert-compact-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.alert-compact-map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0284c7;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  border-radius: 4px;
+  padding: 3px 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.alert-compact-map-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
 .alert-compact-hint {
   font-size: 10.5px;
   font-weight: 700;
@@ -993,8 +1038,8 @@ textarea {
 .alert-modal-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding: 14px;
+  gap: 14px 16px;
+  padding: 14px 16px;
   background: #f8fafc;
   border: 1.5px solid #0f172a1e;
   border-radius: 8px;
@@ -1003,7 +1048,21 @@ textarea {
 .alert-modal-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.alert-modal-item .urgency-pill,
+.alert-modal-item .pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: fit-content;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 5px;
+  line-height: 1.25;
 }
 
 .alert-modal-label {
@@ -1306,4 +1365,669 @@ textarea {
 .modal-content,
 .modal {
   animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ============================================================
+   NOTIFICATION TOAST SYSTEM
+   Disease case alerts — real-time DB polling notifications
+   ============================================================ */
+
+/* ── Keyframes ───────────────────────────────────────────── */
+
+@keyframes toastSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(110%) scale(0.95);
+  }
+  60% {
+    transform: translateX(-4px) scale(1.005);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 180px;
+    margin-bottom: 10px;
+  }
+  60% {
+    opacity: 0;
+    transform: translateX(110%) scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(110%);
+    max-height: 0;
+    margin-bottom: 0;
+    padding: 0;
+  }
+}
+
+@keyframes toastTimerBar {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+@keyframes toastTextIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes criticalFlash {
+  0%, 100% { background: transparent; }
+  25%       { background: rgba(220, 38, 38, 0.15); }
+  50%       { background: rgba(220, 38, 38, 0.08); }
+  75%       { background: rgba(220, 38, 38, 0.18); }
+}
+
+@keyframes countBounce {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.35); }
+  60%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
+  50%       { opacity: 0.7; transform: scale(1.2); box-shadow: 0 0 0 4px transparent; }
+}
+
+@keyframes stackLabelPulse {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 1; }
+}
+
+/* ── Toast Stack Container ───────────────────────────────── */
+
+.notif-toast-stack {
+  position: fixed;
+  top: 68px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  pointer-events: none; /* let clicks pass through empty space */
+  width: 320px;
+}
+
+.notif-stack-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 6px;
+  margin-right: 2px;
+  pointer-events: none;
+  animation: stackLabelPulse 2s ease-in-out infinite;
+}
+
+.notif-stack-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: dotPulse 1.6s ease-in-out infinite;
+}
+
+/* ── Individual Toast Card ───────────────────────────────── */
+
+.notif-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-left: 4px solid #f59e0b; /* overridden inline per severity */
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  pointer-events: all;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.notif-card--enter {
+  animation: toastSlideIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.notif-card--exit {
+  animation: toastSlideOut 0.34s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.notif-card--promoted {
+  animation: toastSlideIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+             criticalFlash 0.8s ease-in-out 0.1s;
+}
+
+/* ── Timer Bar ───────────────────────────────────────────── */
+
+.notif-timer-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2.5px;
+  border-radius: 0 2px 2px 0;
+  animation: toastTimerBar linear forwards;
+  /* duration set inline */
+}
+
+/* ── Card Header ─────────────────────────────────────────── */
+
+.notif-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 6px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.notif-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.notif-dot-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.notif-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  padding: 2px 7px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.notif-new-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0284c7;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.notif-close-btn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.notif-close-btn:hover {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+/* ── Card Body ───────────────────────────────────────────── */
+
+.notif-card-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.notif-disease {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.notif-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+}
+
+.notif-district {
+  color: #334155;
+  font-weight: 600;
+}
+
+.notif-sep {
+  color: #94a3b8;
+}
+
+.notif-count {
+  font-weight: 800;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.notif-count--flash {
+  animation: countBounce 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notif-desc {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+/* ── Text Entry Animations ───────────────────────────────── */
+
+.notif-text-anim {
+  animation: toastTextIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .notif-toast-stack {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    top: 60px;
+  }
+}
+
+/* ============================================================
+   SCHEDULE VACCINATION — Alert Card States
+   ============================================================ */
+
+@keyframes scheduleConfirm {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.04); }
+  60%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+@keyframes stampIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Vaccinate button ────────────────────────────────────── */
+
+.alert-vacc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid #6ee7b7;
+  background: #ecfdf5;
+  color: #047857;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.alert-vacc-btn:hover:not(:disabled) {
+  background: #d1fae5;
+  border-color: #34d399;
+  color: #065f46;
+}
+
+.alert-vacc-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.alert-vacc-btn--loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.alert-vacc-btn--done {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+  cursor: default;
+  opacity: 0.85;
+}
+
+/* ── Scheduled card state ────────────────────────────────── */
+
+.alert-card--scheduled {
+  background: #fafffe !important;
+  opacity: 0.82;
+  animation: scheduleConfirm 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none; /* prevent clicking into detail modal */
+  position: relative;
+}
+
+.alert-card--scheduled .alert-compact-main {
+  position: relative;
+}
+
+/* Strikethrough on title & meta */
+.alert-compact-main--struck .alert-compact-title {
+  text-decoration: line-through;
+  text-decoration-color: #94a3b8;
+  text-decoration-thickness: 1.5px;
+  color: #94a3b8;
+  transition: color 0.3s, text-decoration-color 0.3s;
+}
+
+.alert-compact-main--struck .alert-compact-dist,
+.alert-compact-main--struck .alert-compact-time,
+.alert-compact-main--struck .alert-compact-dot {
+  text-decoration: line-through;
+  text-decoration-color: #94a3b8;
+  color: #b0bec5;
+}
+
+/* "Vaccination Scheduled" green stamp */
+.alert-card-scheduled-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #047857;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  border-radius: 5px;
+  padding: 2px 8px;
+  margin-bottom: 4px;
+  animation: stampIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+}
+
+/* ── Vaccination table — alert-triggered row ─────────────── */
+
+.vacc-row--new {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.13) 0%, rgba(240, 253, 244, 0.4) 55%, transparent 100%) !important;
+  animation: scheduleConfirm 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vacc-row--new td {
+  border-left: none;
+}
+
+.vacc-row--new td:first-child {
+  border-left: 3px solid #10b981 !important;
+}
+
+.vacc-new-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #047857;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  vertical-align: middle;
+  animation: stampIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Vaccination Schedule Modal ─────────────────────────── */
+
+.vacc-modal {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  animation: modalEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vacc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: #f8fafc;
+}
+
+.vacc-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.vacc-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vacc-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.vacc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.vacc-form-group--full {
+  grid-column: 1 / -1;
+}
+
+.vacc-form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.vacc-form-input,
+.vacc-form-select {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 7px;
+  border: 1px solid var(--border, #cbd5e1);
+  background: #ffffff;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.vacc-form-input:focus,
+.vacc-form-select:focus {
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.vacc-form-textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.vacc-form-error {
+  font-size: 12px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.vacc-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.vacc-schedule-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* ── Equal Height & Scrollable Vaccination Layout ───────── */
+
+.vacc-card-equal {
+  height: 340px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.vacc-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.vacc-progress-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.vacc-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+}
+
+.vacc-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f1f5f9;
+  box-shadow: 0 1px 0 #cbd5e1;
+}
+
+.vacc-table-wrap::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.vacc-table-wrap::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.vacc-table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.vacc-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ── Case Management Table Scrolling ───────────────────── */
+
+.cases-card-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.cases-table-wrap {
+  max-height: 340px;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+}
+
+.cases-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f1f5f9;
+  box-shadow: 0 1px 0 #cbd5e1;
+}
+
+.cases-table-wrap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.cases-table-wrap::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.cases-table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.cases-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.cases-filter-select {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  background: #ffffff;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.cases-filter-select:focus {
+  border-color: #059669;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
 }

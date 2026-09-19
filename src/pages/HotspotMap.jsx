@@ -336,6 +336,7 @@ export default function HotspotMap({ onNavigate }) {
                 onSelect={handleSelect}
                 mode={mode}
                 height={500}
+                storageKey="pashurakshak_hotspot_map_view"
               />
             </MapErrorBoundary>
 

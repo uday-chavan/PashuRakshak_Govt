@@ -154,6 +154,47 @@ export async function getActiveVaccinationDrives() {
   );
 }
 
+/** Fetch all vaccination drives for the schedule table (ordered by scheduled_date) */
+export async function getLiveVaccinationSchedule() {
+  return query((sql) =>
+    sql`SELECT * FROM vaccination_drives ORDER BY scheduled_date ASC`
+  );
+}
+
+/**
+ * Insert a new vaccination drive into the database.
+ * @param {{ disease: string, vaccineName: string, district: string, targetCount: number, scheduledDate: string, notes?: string }} data
+ */
+export async function addVaccinationDrive(data) {
+  const client = getClient();
+  if (!client) throw new Error('No DB connection');
+
+  const {
+    disease,
+    vaccineName,
+    district,
+    targetCount = 0,
+    scheduledDate,
+    notes = null,
+  } = data;
+
+  // Auto-generate a drive_ref like VD-2601
+  const driveRef = `VD-${Date.now().toString().slice(-6)}`;
+
+  const [row] = await client`
+    INSERT INTO vaccination_drives
+      (drive_ref, disease, vaccine_name, district, target_count,
+       pending_count, status, scheduled_date, notes)
+    VALUES
+      (${driveRef}, ${disease}, ${vaccineName}, ${district},
+       ${targetCount}, ${targetCount}, 'Scheduled',
+       ${scheduledDate}::date, ${notes})
+    RETURNING *
+  `;
+  return row;
+}
+
+
 // ─────────────────────────────────────────────
 // ALERTS
 // ─────────────────────────────────────────────
