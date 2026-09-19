@@ -10,7 +10,7 @@ import { DISTRICT_COORDINATES, ALL_36_MAHARASHTRA_DISTRICTS, normalizeDistrictNa
 const DB_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATABASE_URL) ||
   (typeof process !== 'undefined' && process.env?.VITE_DATABASE_URL) ||
-  'postgresql://neondb_owner:npg_JdI57BmziKQL@ep-holy-field-b4ibid0j-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+  '';
 
 let sql = null;
 function getClient() {
