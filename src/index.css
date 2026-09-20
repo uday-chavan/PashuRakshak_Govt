@@ -117,6 +117,11 @@ textarea {
   margin-left: 260px;
   display: flex;
   flex-direction: column;
+  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell.sidebar-collapsed .app-body {
+  margin-left: 0;
 }
 
 .main-content {
@@ -174,6 +179,51 @@ textarea {
   font-weight: 800;
   color: var(--ink);
   letter-spacing: -0.01em;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+}
+
+.typing-title {
+  display: inline-flex;
+  align-items: center;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  min-height: 1.2em;
+}
+
+.typing-text {
+  display: inline-block;
+}
+
+.typing-cursor {
+  display: inline-block;
+  margin-left: 3px;
+  font-size: 0.85em;
+  color: var(--green-600);
+  opacity: 1;
+  vertical-align: middle;
+}
+
+.typing-cursor.active {
+  animation: typing-blink 0.7s infinite alternate;
+}
+
+.typing-cursor.done {
+  animation: typing-fade-out 0.8s ease 0.6s forwards;
+}
+
+@keyframes typing-blink {
+  0% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.2; }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+
+@keyframes typing-fade-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
 }
 
 .page-head p {

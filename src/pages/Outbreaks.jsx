@@ -1,14 +1,9 @@
 import { Activity } from 'lucide-react';
 import StatCard from '../components/StatCard.jsx';
-import SimpleChart from '../components/SimpleChart.jsx';
+import TypewriterTitle from '../components/TypewriterTitle.jsx';
+import DiseaseActivityChart from '../components/DiseaseActivityChart.jsx';
 import AnimatedNumber from '../components/AnimatedNumber.jsx';
 import { outbreakStats, diseaseActivity, outbreakList, riskPill } from '../data/mockData.js';
-
-const chartData = diseaseActivity.map((d) => ({
-  label: d.month,
-  cases: d.cases,
-  mortality: d.mortality,
-}));
 
 const statusPill = {
   Active: 'pill-critical',
@@ -21,13 +16,20 @@ export default function Outbreaks() {
     <div>
       <div className="page-head">
         <div className="meta-line">PashuRakshak · Outbreak Monitoring</div>
-        <h1>Outbreak Monitoring</h1>
+        <TypewriterTitle text="Outbreak Monitoring" />
         <p>Track the spread of livestock diseases across districts and coordinate response.</p>
       </div>
 
       <div className="stat-grid">
         {outbreakStats.map((s) => (
-          <StatCard key={s.key} icon={s.key === 'mortality' ? 'Activity' : 'Virus'} label={s.label} value={s.value} tone={s.tone} />
+          <StatCard
+            key={s.key}
+            icon={s.key === 'mortality' ? 'Activity' : 'Virus'}
+            label={s.label}
+            value={s.value}
+            tone={s.tone}
+            showBg={false}
+          />
         ))}
       </div>
 
@@ -37,18 +39,12 @@ export default function Outbreaks() {
             <div>
               <div className="card-title">
                 <Activity size={16} style={{ verticalAlign: '-2px', marginRight: 6 }} />
-                Disease Activity Trend
+                Disease Activity Surveillance &amp; Forecast
               </div>
-              <div className="card-subtitle">New cases vs mortality, last six months</div>
+              <div className="card-subtitle">Multi-metric epidemiological timeline &amp; reproduction rate</div>
             </div>
           </div>
-          <SimpleChart
-            data={chartData}
-            lines={[
-              { dataKey: 'cases', name: 'New cases', color: '#10734e' },
-              { dataKey: 'mortality', name: 'Mortality', color: '#dc2626' },
-            ]}
-          />
+          <DiseaseActivityChart data={diseaseActivity} height={280} />
         </div>
 
         <div className="card">

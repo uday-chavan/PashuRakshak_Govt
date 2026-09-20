@@ -3,8 +3,11 @@
   top: 0;
   z-index: 40;
   height: 64px;
-  background: var(--white);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -19,15 +22,33 @@
   min-width: 0;
 }
 
+.topbar-govt-emblem {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+}
+
 .topbar-menu {
-  display: none;
-  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--line);
   background: var(--white);
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  place-items: center;
   color: var(--ink-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.topbar-menu:hover {
+  background: var(--green-50);
+  color: var(--green-700);
+  border-color: var(--green-500);
+  box-shadow: 0 2px 6px rgba(4, 120, 87, 0.12);
 }
 
 .topbar-title {

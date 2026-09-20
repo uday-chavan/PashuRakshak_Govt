@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Modal from '../components/Modal.jsx';
 import AnimatedNumber from '../components/AnimatedNumber.jsx';
+import TypewriterTitle from '../components/TypewriterTitle.jsx';
 import { caseStatusPill, cases as mockCases } from '../data/mockData.js';
 import { getAnimalCases, getCaseTimeline } from '../db/client.js';
 
@@ -121,7 +122,7 @@ export default function Cases() {
       <div className="page-head">
         <div className="flex-between">
           <div>
-            <h1>Case Management</h1>
+            <TypewriterTitle text="Case Management" />
             <p>
               Track individual animal health records, location telemetry, symptoms, and treatment regimens in real-time.
             </p>

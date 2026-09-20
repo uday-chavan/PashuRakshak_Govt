@@ -8,6 +8,11 @@
   flex-direction: column;
   z-index: 50;
   box-shadow: 2px 0 16px rgba(4, 47, 36, 0.18);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell.sidebar-collapsed .sidebar {
+  transform: translateX(-100%);
 }
 
 .sidebar-brand {
@@ -51,20 +56,6 @@
   margin-top: 4px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-}
-
-.sidebar-close {
-  display: none;
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  place-items: center;
 }
 
 .sidebar-nav {
@@ -136,10 +127,6 @@
 
   .sidebar.mobile-open {
     transform: translateX(0);
-  }
-
-  .sidebar-close {
-    display: grid;
   }
 
   .sidebar-scrim {

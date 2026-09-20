@@ -1,7 +1,7 @@
 import AnimatedNumber from './AnimatedNumber.jsx';
-import activeCasesImg from '../assets/Active Cases.avif';
+import activeCasesImg from '../assets/Active Cases.jpg';
 import activeOutbreaksImg from '../assets/Active Outbreaks.png';
-import animalsAffectedImg from '../assets/Animals Affected.png';
+import animalsAffectedImg from '../assets/Animals Affected 1.jpg';
 import highRiskAreasImg from '../assets/High-Risk Areas.jpg';
 import mortalityImg from '../assets/Mortality 2.jpg';
 import newCasesImg from '../assets/New Cases.png';
@@ -22,16 +22,18 @@ const CARD_BG_IMAGES = {
 };
 
 const CARD_BG_SIZES = {
-  'Animals Affected': '46%',
-  'Affected Animals': '46%',
-  'Mortality': '46%',
-  'Mortality (7 days)': '46%',
-  'Mortality (7 Days)': '46%',
-  'High-Risk Areas': '46%',
-  'High Risk Areas': '46%',
-  'New Cases': '26%',
-  'New Cases (7 days)': '26%',
-  'New Cases (7 Days)': '26%',
+  'Active Cases': '48%',
+  'Active Outbreaks': '38%',
+  'Animals Affected': '58%',
+  'Affected Animals': '58%',
+  'Mortality': '58%',
+  'Mortality (7 days)': '58%',
+  'Mortality (7 Days)': '58%',
+  'High-Risk Areas': '58%',
+  'High Risk Areas': '58%',
+  'New Cases': '34%',
+  'New Cases (7 days)': '34%',
+  'New Cases (7 Days)': '34%',
 };
 
 function resolveCardBg(label, bgImage) {
@@ -51,15 +53,17 @@ function resolveCardBg(label, bgImage) {
 
 function resolveCardBgSize(label, customBgSize) {
   if (customBgSize) return customBgSize;
-  if (!label || typeof label !== 'string') return '33%';
+  if (!label || typeof label !== 'string') return '45%';
   const clean = label.trim();
   if (CARD_BG_SIZES[clean]) return CARD_BG_SIZES[clean];
   const lower = clean.toLowerCase();
-  if (lower.includes('animal') || lower.includes('affected')) return '46%';
-  if (lower.includes('mortality')) return '46%';
-  if (lower.includes('risk')) return '46%';
-  if (lower.includes('new case')) return '26%';
-  return '33%';
+  if (lower.includes('animal') || lower.includes('affected')) return '58%';
+  if (lower.includes('mortality')) return '58%';
+  if (lower.includes('risk')) return '58%';
+  if (lower.includes('outbreak')) return '38%';
+  if (lower.includes('active')) return '48%';
+  if (lower.includes('new case')) return '34%';
+  return '45%';
 }
 
 function resolveCardBgPosition(label, customBgPosition) {
@@ -78,12 +82,16 @@ export default function StatCard({
   note,
   tone,
   bgImage,
+  showBg = true,
+  noBg = false,
   bgSize,
   bgPosition,
   className = '',
 }) {
   const isNumeric = typeof value === 'number' || (typeof value === 'string' && /^[+-]?[\d,]+(\.\d+)?%?$/.test(value.trim()));
-  const resolvedBg = resolveCardBg(label, bgImage);
+  const resolvedBg = (!showBg || noBg || bgImage === false || bgImage === 'none')
+    ? null
+    : resolveCardBg(label, bgImage);
   const resolvedBgSize = resolveCardBgSize(label, bgSize);
   const resolvedBgPosition = resolveCardBgPosition(label, bgPosition);
 

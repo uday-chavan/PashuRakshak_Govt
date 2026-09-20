@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FlaskConical, FileText } from 'lucide-react';
 import StatCard from '../components/StatCard.jsx';
 import Modal from '../components/Modal.jsx';
+import TypewriterTitle from '../components/TypewriterTitle.jsx';
 import { labStats, samples, labStatusPill, labReport } from '../data/mockData.js';
 
 export default function Laboratory() {
@@ -18,7 +19,7 @@ export default function Laboratory() {
     <div>
       <div className="page-head">
         <div className="meta-line">PashuRakshak · Laboratory</div>
-        <h1>Laboratory</h1>
+        <TypewriterTitle text="Laboratory" />
         <p>Track sample collection, testing status and diagnostic reports across laboratories.</p>
       </div>
 

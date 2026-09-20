@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import {
   MapPin,
   Syringe,
@@ -93,6 +93,31 @@ export default function HotspotMap({ onNavigate }) {
   const [period, setPeriod] = useState('Last 7 Days');
   const [mode, setMode] = useState('cases');
   const [selected, setSelected] = useState(null);
+  const [panelWidth, setPanelWidth] = useState(310);
+  const bodyRef = useRef(null);
+  const isDragging = useRef(false);
+
+  const startResize = useCallback((e) => {
+    e.preventDefault();
+    isDragging.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    const onMove = (ev) => {
+      if (!isDragging.current || !bodyRef.current) return;
+      const bodyRect = bodyRef.current.getBoundingClientRect();
+      const newWidth = Math.max(200, Math.min(520, bodyRect.right - ev.clientX));
+      setPanelWidth(newWidth);
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
 
   useEffect(() => {
     // Fetch live hotspot districts from DB (returns all 36 districts)
@@ -248,41 +273,26 @@ export default function HotspotMap({ onNavigate }) {
       <div className="hm-card">
         {/* ---------- Header ---------- */}
         <div className="hm-head">
-          <div className="hm-title-block">
-            <div className="hm-title-row">
+          <div className="hm-head-top">
+
+            {/* Left column: title + subtitle */}
+            <div className="hm-title-left">
               <div className="hm-title">
-                <MapPin size={18} />
-                Maharashtra Disease Intelligence Map
+                <span className="hm-title-icon-wrap">
+                  <MapPin size={16} />
+                </span>
+                <span className="hm-title-text">Maharashtra Disease Intelligence Map</span>
               </div>
-              <span className="hm-live">
-                <span className="hm-live-dot" /> 36 Districts Telemetry Active
-              </span>
-            </div>
-            <div className="hm-sub">
-              Monitor disease activity, spatial clustering, village-level cases, and vaccination coverage across all 36 Maharashtra districts.
-            </div>
-          </div>
-
-          <div className="hm-head-right">
-            <div className="hm-mode-switch" role="tablist" aria-label="Map mode">
-              {modes.map((m) => (
-                <button
-                  key={m.key}
-                  role="tab"
-                  aria-selected={mode === m.key}
-                  className={`hm-mode-btn ${mode === m.key ? 'active' : ''}`}
-                  onClick={() => setMode(m.key)}
-                >
-                  {m.label}
-                </button>
-              ))}
+              <div className="hm-sub">
+                Monitor disease activity, spatial clustering, village-level cases, and vaccination coverage across all 36 Maharashtra districts.
+              </div>
             </div>
 
-            <div className="hm-filters">
-              {/* Select District Dropdown (All 36 Districts) */}
-              <div className="hm-filter">
-                <label>Select District</label>
+            {/* Right column: sorters + badge */}
+            <div className="hm-head-controls">
+              <div className="hm-filters-inline">
                 <select
+                  className="hm-filter-select"
                   value={districtFilter}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -298,35 +308,34 @@ export default function HotspotMap({ onNavigate }) {
                   <option value="">All Districts ({ALL_36_MAHARASHTRA_DISTRICTS.length})</option>
                   {districtDropdownOptions.map((d) => (
                     <option key={d.name} value={d.name}>
-                      {d.name} {d.casesCount > 0 ? `(${d.casesCount} case${d.casesCount > 1 ? 's' : ''})` : ''}
+                      {d.name}{d.casesCount > 0 ? ` (${d.casesCount})` : ''}
                     </option>
                   ))}
                 </select>
-              </div>
 
-              <div className="hm-filter">
-                <label>Disease</label>
-                <select value={disease} onChange={(e) => setDisease(e.target.value)}>
+                <select className="hm-filter-select" value={disease} onChange={(e) => setDisease(e.target.value)}>
                   {diseaseOptions.map((d) => (
                     <option key={d}>{d}</option>
                   ))}
                 </select>
-              </div>
 
-              <div className="hm-filter">
-                <label>Period</label>
-                <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                <select className="hm-filter-select" value={period} onChange={(e) => setPeriod(e.target.value)}>
                   {periodOptions.map((p) => (
                     <option key={p}>{p}</option>
                   ))}
                 </select>
               </div>
+
+              <span className="hm-live hm-live-below">
+                <span className="hm-live-dot" /> 36 Districts Active
+              </span>
             </div>
+
           </div>
         </div>
 
         {/* ---------- Body ---------- */}
-        <div className="hm-body">
+        <div className="hm-body" ref={bodyRef} style={{ gridTemplateColumns: `minmax(0, 1fr) 5px ${panelWidth}px` }}>
           <div className="hm-map-column">
             <MapErrorBoundary height={500}>
               <LeafletMapView
@@ -383,6 +392,9 @@ export default function HotspotMap({ onNavigate }) {
               })}
             </div>
           </div>
+
+          {/* ---------- Resizer ---------- */}
+          <div className="hm-resizer" onMouseDown={startResize} title="Drag to resize" />
 
           {/* ---------- District intelligence panel ---------- */}
           <aside className="hm-detail-panel">

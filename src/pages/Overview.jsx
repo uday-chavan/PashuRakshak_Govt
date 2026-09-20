@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
 import StatCard from '../components/StatCard.jsx';
-import SimpleChart from '../components/SimpleChart.jsx';
+import TypewriterTitle from '../components/TypewriterTitle.jsx';
+import DiseaseActivityChart from '../components/DiseaseActivityChart.jsx';
 import LeafletMapView from '../components/LeafletMapView.jsx';
 import MapErrorBoundary from '../components/MapErrorBoundary.jsx';
 import AlertPanel from '../components/AlertPanel.jsx';
@@ -14,12 +15,6 @@ import {
 import { getAnimalCases, getHotspotDistricts } from '../db/client.js';
 import { generateAllDiseaseAlerts } from '../services/geminiAlertService.js';
 import { startPolling, stopPolling, subscribe, resetPolling } from '../services/pollingService.js';
-
-const chartData = diseaseActivity.map((d) => ({
-  label: d.month,
-  cases: d.cases,
-  mortality: d.mortality,
-}));
 
 const statusPill = {
   Active: 'pill-active',
@@ -177,7 +172,7 @@ export default function Overview({ onNewCases }) {
     <div>
       <div className="page-head">
         <div className="meta-line">PashuRakshak · Government Dashboard</div>
-        <h1>Overview</h1>
+        <TypewriterTitle text="Overview" />
       </div>
 
       <div className="stat-grid">
@@ -293,17 +288,11 @@ export default function Overview({ onNewCases }) {
         <div className="card">
           <div className="card-head">
             <div>
-              <div className="card-title">Disease Activity</div>
-              <div className="card-subtitle">Reported cases and mortality by month</div>
+              <div className="card-title">Disease Activity Analytics</div>
+              <div className="card-subtitle">Multi-factor epidemiological surveillance &amp; trend analysis</div>
             </div>
           </div>
-          <SimpleChart
-            data={chartData}
-            lines={[
-              { dataKey: 'cases', name: 'Cases', color: '#047857' },
-              { dataKey: 'mortality', name: 'Mortality', color: '#dc2626' },
-            ]}
-          />
+          <DiseaseActivityChart data={diseaseActivity} height={260} />
         </div>
 
         <div className="card">

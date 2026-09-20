@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Syringe, Plus, X, CheckCircle2, Calendar } from 'lucide-react';
 import StatCard from '../components/StatCard.jsx';
 import AnimatedNumber from '../components/AnimatedNumber.jsx';
+import TypewriterTitle from '../components/TypewriterTitle.jsx';
 import { vaccinationStats, vaccinationSchedule, vaccinationProgress } from '../data/mockData.js';
 import { subscribeSchedule, getScheduledVaccinations, addScheduledVaccination } from '../services/vaccinationStore.js';
 import { getLiveVaccinationSchedule } from '../db/client.js';
@@ -266,7 +267,7 @@ export default function Vaccination() {
     <div>
       <div className="page-head">
         <div className="meta-line">PashuRakshak · Vaccination</div>
-        <h1>Vaccination</h1>
+        <TypewriterTitle text="Vaccination" />
         <p>Monitor vaccination drives, schedules and district-wise completion across Maharashtra.</p>
       </div>
 

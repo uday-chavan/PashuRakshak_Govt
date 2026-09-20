@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Megaphone, Send, CheckCircle2 } from 'lucide-react';
 import Modal from '../components/Modal.jsx';
+import TypewriterTitle from '../components/TypewriterTitle.jsx';
 import { previousAlerts, districtOptions } from '../data/mockData.js';
 
 const alertTypes = ['Vaccination', 'Disease Warning', 'General Advisory'];
@@ -27,7 +28,7 @@ export default function Alerts() {
     <div>
       <div className="page-head">
         <div className="meta-line">PashuRakshak · Alerts</div>
-        <h1>Alerts</h1>
+        <TypewriterTitle text="Alerts" />
         <p>Review recent alerts and send new advisories to district officers and field staff.</p>
         <div className="page-head-actions">
           <button className="btn btn-primary" onClick={() => setSendOpen(true)}>

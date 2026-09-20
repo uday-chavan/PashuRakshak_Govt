@@ -16,12 +16,15 @@ export const overviewStats = [
 
 // ----- Disease activity over recent months -----
 export const diseaseActivity = [
-  { month: 'Apr', cases: 186, mortality: 12 },
-  { month: 'May', cases: 212, mortality: 11 },
-  { month: 'Jun', cases: 268, mortality: 18 },
-  { month: 'Jul', cases: 241, mortality: 14 },
-  { month: 'Aug', cases: 295, mortality: 16 },
-  { month: 'Sep', cases: 312, mortality: 15 },
+  { month: 'Apr', cases: 186, mortality: 12, vaccinated: 1240, atRisk: 320, recoveryRate: 74, rValue: 1.18, alerts: 4 },
+  { month: 'May', cases: 212, mortality: 11, vaccinated: 1580, atRisk: 290, recoveryRate: 78, rValue: 1.31, alerts: 6 },
+  { month: 'Jun', cases: 268, mortality: 18, vaccinated: 1820, atRisk: 410, recoveryRate: 69, rValue: 1.52, alerts: 9 },
+  { month: 'Jul', cases: 241, mortality: 14, vaccinated: 2140, atRisk: 360, recoveryRate: 72, rValue: 1.38, alerts: 7 },
+  { month: 'Aug', cases: 295, mortality: 16, vaccinated: 2510, atRisk: 430, recoveryRate: 71, rValue: 1.61, alerts: 11 },
+  { month: 'Sep', cases: 312, mortality: 15, vaccinated: 2760, atRisk: 480, recoveryRate: 73, rValue: 1.55, alerts: 10 },
+  { month: 'Oct', cases: 278, mortality: 13, vaccinated: 3020, atRisk: 390, recoveryRate: 76, rValue: 1.42, alerts: 8 },
+  { month: 'Nov', cases: 231, mortality: 10, vaccinated: 3340, atRisk: 310, recoveryRate: 82, rValue: 1.21, alerts: 5 },
+  { month: 'Dec', cases: 198, mortality: 9,  vaccinated: 3590, atRisk: 260, recoveryRate: 86, rValue: 1.07, alerts: 3 },
 ];
 
 // ----- Important alerts (dashboard + alerts page) -----

@@ -6,7 +6,6 @@ import {
   Syringe,
   FlaskConical,
   Megaphone,
-  X,
 } from 'lucide-react';
 import logo from '../assets/pashu-rakshak-logo.png';
 
@@ -26,13 +25,6 @@ export default function Sidebar({ active, onNavigate, mobileOpen, onCloseMobile 
       {mobileOpen && <div className="sidebar-scrim" onClick={onCloseMobile} />}
       <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
         <div className="sidebar-brand">
-          <button
-            className="sidebar-close"
-            onClick={onCloseMobile}
-            aria-label="Close menu"
-          >
-            <X size={18} />
-          </button>
           <img src={logo} alt="PashuRakshak emblem" className="sidebar-logo" />
           <div className="sidebar-brand-text">
             <span className="brand-name">PashuRakshak</span>
