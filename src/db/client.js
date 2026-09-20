@@ -5,7 +5,13 @@
  */
 
 import { neon } from '@neondatabase/serverless';
-import { DISTRICT_COORDINATES, ALL_36_MAHARASHTRA_DISTRICTS, normalizeDistrictName } from '../data/maharashtraGeo.js';
+import {
+  DISTRICT_COORDINATES,
+  ALL_36_MAHARASHTRA_DISTRICTS,
+  normalizeDistrictName,
+  getDistrictFromCoordinates,
+  getNearestTownAndDistrict,
+} from '../data/maharashtraGeo.js';
 
 const DB_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATABASE_URL) ||
@@ -33,22 +39,42 @@ async function query(fn) {
   }
 }
 
+function sanitizeCaseRow(row) {
+  if (!row) return row;
+  const lat = row.latitude ?? row.lat;
+  const lng = row.longitude ?? row.lng;
+  if (lat !== undefined && lat !== null && lng !== undefined && lng !== null) {
+    const rawV = row.village_area || row.village || row.villageArea || row.location || '';
+    const rawD = row.district || row.district_name || '';
+    const { village, district } = getNearestTownAndDistrict(lat, lng, rawV, rawD);
+    return {
+      ...row,
+      village_area: village,
+      village: village,
+      district: district,
+    };
+  }
+  return row;
+}
+
 // ─────────────────────────────────────────────
 // ANIMAL CASES
 // ─────────────────────────────────────────────
 
 /** Returns all animal cases ordered by most recent first */
 export async function getAnimalCases() {
-  return query((sql) =>
+  const rows = await query((sql) =>
     sql`SELECT * FROM animal_cases ORDER BY date_time DESC`
   );
+  return (rows || []).map(sanitizeCaseRow);
 }
 
 /** Returns the N most recent cases */
 export async function getRecentCases(limit = 5) {
-  return query((sql) =>
+  const rows = await query((sql) =>
     sql`SELECT * FROM animal_cases ORDER BY date_time DESC LIMIT ${limit}`
   );
+  return (rows || []).map(sanitizeCaseRow);
 }
 
 /** Returns a single case by case_ref (e.g. 'CS-2601') */
@@ -56,7 +82,7 @@ export async function getCaseByRef(caseRef) {
   const rows = await query((sql) =>
     sql`SELECT * FROM animal_cases WHERE case_ref = ${caseRef} LIMIT 1`
   );
-  return rows[0] ?? null;
+  return rows[0] ? sanitizeCaseRow(rows[0]) : null;
 }
 
 /** Returns timeline events for a given case id */
@@ -70,7 +96,7 @@ export async function getCaseTimeline(caseId) {
 export async function addAnimalCase(data) {
   const client = getClient();
   if (!client) throw new Error('No DB connection');
-  const {
+  let {
     animal, species = null, herdSize = 1,
     ownerName, ownerContact, villageArea,
     district, latitude, longitude,
@@ -78,6 +104,15 @@ export async function addAnimalCase(data) {
     diseaseUnderTreatment = null, status = 'Pending',
     assignedVet = null, dateTime = null,
   } = data;
+
+  // If district is not provided or generic, auto-fill from coordinates!
+  if (!district || district.trim() === '' || district.toLowerCase() === 'maharashtra') {
+    if (latitude && longitude) {
+      const autoDist = getDistrictFromCoordinates(latitude, longitude);
+      if (autoDist) district = autoDist;
+    }
+  }
+
   const [row] = await client`
     INSERT INTO animal_cases
       (animal, species, herd_size, owner_name, owner_contact, village_area,

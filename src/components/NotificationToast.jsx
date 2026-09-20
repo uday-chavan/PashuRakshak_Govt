@@ -126,7 +126,11 @@ function ToastCard({ toast, onDismiss }) {
           <span>{toast.disease}</span>
         </div>
         <div className="notif-meta notif-text-anim" style={{ animationDelay: '0.10s' }}>
-          <span className="notif-district">{toast.district}</span>
+          <span className="notif-district">
+            {toast.village && toast.village.toLowerCase() !== (toast.district || '').toLowerCase()
+              ? `${toast.village}, ${toast.district}`
+              : toast.district}
+          </span>
           {toast.district && toast.disease && (
             <span className="notif-sep">·</span>
           )}
@@ -139,9 +143,38 @@ function ToastCard({ toast, onDismiss }) {
         </div>
         <p className="notif-desc notif-text-anim" style={{ animationDelay: '0.15s' }}>
           {toast.level === 'critical'
-            ? `⚠ Critical threshold exceeded in ${toast.district}. Immediate response required.`
-            : `New ${toast.disease} case${toast.count > 1 ? 's' : ''} detected in ${toast.district}. Field units alerted.`}
+            ? `⚠ Critical threshold exceeded in ${toast.village && toast.village.toLowerCase() !== (toast.district || '').toLowerCase() ? `${toast.village}, ${toast.district}` : toast.district}. Immediate response required.`
+            : `New ${toast.disease} case${toast.count > 1 ? 's' : ''} detected in ${toast.village && toast.village.toLowerCase() !== (toast.district || '').toLowerCase() ? `${toast.village}, ${toast.district}` : toast.district}. Field units alerted.`}
         </p>
+
+        {toast.district && (
+          <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              className="alert-compact-map-btn"
+              style={{ padding: '3px 8px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.hash = 'hotspots';
+                const mapCard = document.getElementById('overview-map-card');
+                if (mapCard) mapCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                window.dispatchEvent(
+                  new CustomEvent('pashurakshak:view_case', {
+                    detail: {
+                      district: toast.district,
+                      village: toast.village,
+                      lat: toast.lat,
+                      lng: toast.lng,
+                      disease: toast.disease,
+                    },
+                  })
+                );
+              }}
+            >
+              <Activity size={11} /> View on Map
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -161,18 +194,23 @@ export default function NotificationToast({ events }) {
   useEffect(() => {
     if (!events || events.length === 0) return;
 
-    // events = array of { disease, district, count, latestDate }
+    // events = array of { disease, district, count, latestDate, village, lat, lng }
     setToasts((prev) => {
       let updated = [...prev];
 
       events.forEach((evt) => {
         const disease = evt.disease || 'Undiagnosed Condition';
         const district = evt.district || 'Maharashtra';
+        const village = evt.village || '';
+        const lat = evt.lat ?? null;
+        const lng = evt.lng ?? null;
         const addedCount = evt.count || 1;
 
-        // Find existing toast for this disease
+        // Find existing toast for this disease and district
         const existingIdx = updated.findIndex(
-          (t) => t.disease.toLowerCase() === disease.toLowerCase()
+          (t) =>
+            t.disease.toLowerCase() === disease.toLowerCase() &&
+            (t.district || '').toLowerCase() === district.toLowerCase()
         );
 
         if (existingIdx >= 0) {
@@ -182,6 +220,9 @@ export default function NotificationToast({ events }) {
           const newLevel = getLevel(newCount);
           updated[existingIdx] = {
             ...existing,
+            village: village || existing.village,
+            lat: lat || existing.lat,
+            lng: lng || existing.lng,
             count: newCount,
             level: newLevel,
             isNew: false,
@@ -193,6 +234,9 @@ export default function NotificationToast({ events }) {
             id: `notif-${_toastIdCounter++}`,
             disease,
             district,
+            village,
+            lat,
+            lng,
             count: addedCount,
             level: getLevel(addedCount),
             isNew: true,

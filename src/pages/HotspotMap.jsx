@@ -22,11 +22,13 @@ import {
   attentionAreas as mockAttentionAreas,
 } from '../data/mockData.js';
 import { getHotspotDistricts, getAnimalCases } from '../db/client.js';
+import { startPolling, stopPolling, subscribe } from '../services/pollingService.js';
 import {
   ALL_36_MAHARASHTRA_DISTRICTS,
   DISTRICT_COORDINATES,
   normalizeDistrictName,
   matchDistrict,
+  parseAnimalCaseToPin,
 } from '../data/maharashtraGeo.js';
 
 const periodOptions = ['Last 7 Days', 'Last 30 Days', 'All'];
@@ -120,7 +122,14 @@ export default function HotspotMap({ onNavigate }) {
   }, []);
 
   useEffect(() => {
-    // Fetch live hotspot districts from DB (returns all 36 districts)
+    // Helper to process cases into valid geographic pins
+    const updatePins = (casesData) => {
+      if (!Array.isArray(casesData)) return;
+      const validPins = casesData.map(parseAnimalCaseToPin).filter(Boolean);
+      setCasePins(validPins);
+    };
+
+    // 1. Fetch live hotspot districts from DB (covers all 36 districts)
     getHotspotDistricts()
       .then((data) => {
         if (data && data.length > 0) {
@@ -129,27 +138,27 @@ export default function HotspotMap({ onNavigate }) {
       })
       .catch((err) => console.warn('[HotspotMap] getHotspotDistricts fallback:', err));
 
-    // Fetch live cases as GPS points
+    // 2. Fetch live cases as GPS points
     getAnimalCases()
       .then((data) => {
-        setCasePins(
-          data
-            .filter((c) => c.latitude && c.longitude)
-            .map((c) => ({
-              id: c.id,
-              caseRef: c.case_ref || c.caseRef || `CS-260${c.id}`,
-              lat: parseFloat(c.latitude),
-              lng: parseFloat(c.longitude),
-              animal: c.animal,
-              village: c.village_area || c.village || c.villageArea || 'Area Sector',
-              district: normalizeDistrictName(c.district),
-              disease: c.confirmed_disease || c.suspected_disease || c.disease || c.suspectedDisease,
-              status: c.status || 'Active',
-              vet: c.assigned_vet || c.vet,
-            }))
-        );
+        updatePins(data);
       })
       .catch(() => setCasePins([]));
+
+    // 3. Subscribe to real-time mobile case updates
+    const unsub = subscribe(({ allCases }) => {
+      updatePins(allCases);
+      getHotspotDistricts()
+        .then((d) => { if (d && d.length > 0) setLiveDistricts(d); })
+        .catch(() => {});
+    });
+
+    startPolling();
+
+    return () => {
+      unsub();
+      stopPolling();
+    };
   }, []);
 
   const filterable = useMemo(() => liveDistricts.map((d) => ({ ...d })), [liveDistricts]);

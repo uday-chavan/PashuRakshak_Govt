@@ -457,8 +457,10 @@ export default function GoogleMapsView({
     };
 
     casePins.forEach((pin) => {
-      if (!pin.lat || !pin.lng) return;
-      const cfg = STATUS_PIN_COLORS[pin.status] || { fill: '#6B7280', label: '?' };
+      const lat = typeof pin.lat === 'number' ? pin.lat : parseFloat(pin.lat);
+      const lng = typeof pin.lng === 'number' ? pin.lng : parseFloat(pin.lng);
+      if (isNaN(lat) || isNaN(lng)) return;
+      const cfg = STATUS_PIN_COLORS[pin.status] || { fill: '#DC2626', label: 'C' };
 
       const pinIcon = {
         path: 'M 0,-8 8,0 0,8 -8,0 Z', // diamond shape
@@ -466,15 +468,15 @@ export default function GoogleMapsView({
         fillOpacity: 0.95,
         strokeColor: '#ffffff',
         strokeWeight: 1.5,
-        scale: 1.1,
+        scale: 1.2,
         anchor: new google.maps.Point(0, 0),
         labelOrigin: new google.maps.Point(0, 0),
       };
 
       const caseMarker = new google.maps.Marker({
-        position: { lat: pin.lat, lng: pin.lng },
+        position: { lat, lng },
         map: map,
-        title: `${pin.caseRef} — ${pin.animal}`,
+        title: `${pin.caseRef} — ${pin.animal} (${pin.district})`,
         icon: pinIcon,
         label: {
           text: cfg.label,
@@ -482,7 +484,7 @@ export default function GoogleMapsView({
           fontSize: '9px',
           fontWeight: 'bold',
         },
-        zIndex: 10,
+        zIndex: 50,
       });
 
       const caseInfo = `
@@ -494,7 +496,8 @@ export default function GoogleMapsView({
           <div class="gmap-info-body">
             <div class="gmap-stat-row"><span class="label">Animal:</span><span class="val font-bold">${pin.animal}</span></div>
             <div class="gmap-stat-row"><span class="label">Disease:</span><span class="val text-danger font-bold">${pin.disease || 'Suspected'}</span></div>
-            <div class="gmap-stat-row"><span class="label">Village:</span><span class="val">${pin.village || '—'}, ${pin.district}</span></div>
+            <div class="gmap-stat-row"><span class="label">Location:</span><span class="val">${pin.village || '—'}, ${pin.district}</span></div>
+            <div class="gmap-stat-row"><span class="label">GPS:</span><span class="val font-mono">${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E</span></div>
             <div class="gmap-stat-row"><span class="label">Vet:</span><span class="val">${pin.vet || '—'}</span></div>
           </div>
         </div>
@@ -545,9 +548,16 @@ export default function GoogleMapsView({
 
     if (!selected) return; // nothing selected → just clear
 
-    const canonicalSelected = normalizeDistrictName(
-      typeof selected === 'string' ? selected : (selected.district || selected.name || '')
-    ).toLowerCase();
+    const rawDist = typeof selected === 'string' ? selected : (selected.district || selected.name || '');
+    const canonicalSelected = normalizeDistrictName(rawDist).toLowerCase();
+
+    let explicitLat = typeof selected === 'object' && selected ? (selected.lat ?? selected.latitude) : null;
+    let explicitLng = typeof selected === 'object' && selected ? (selected.lng ?? selected.longitude) : null;
+
+    if (explicitLat !== null && explicitLng !== null && !isNaN(Number(explicitLat)) && !isNaN(Number(explicitLng))) {
+      map.panTo({ lat: Number(explicitLat), lng: Number(explicitLng) });
+      map.setZoom(typeof selected === 'object' && selected?.zoom ? selected.zoom : 12);
+    }
 
     function applyBoundary(geojson) {
       // Find the matching feature by common property keys
@@ -558,10 +568,11 @@ export default function GoogleMapsView({
       });
 
       if (!feature) {
-        // Fallback: just pan to centroid if GeoJSON doesn't have this district
-        const canonical = normalizeDistrictName(selected);
-        const coord = DISTRICT_COORDINATES[selected] || DISTRICT_COORDINATES[canonical];
-        if (coord) { map.panTo(coord); map.setZoom(10); }
+        if (explicitLat === null || explicitLng === null) {
+          const canonical = normalizeDistrictName(rawDist);
+          const coord = DISTRICT_COORDINATES[rawDist] || DISTRICT_COORDINATES[canonical];
+          if (coord) { map.panTo(coord); map.setZoom(10); }
+        }
         return;
       }
 
@@ -582,10 +593,12 @@ export default function GoogleMapsView({
         zIndex: 5,
       });
 
-      // Fit map viewport to district boundary
-      const bounds = boundsFromGeometry(feature.geometry);
-      if (bounds && !bounds.isEmpty()) {
-        map.fitBounds(bounds, { top: 60, right: 20, bottom: 20, left: 20 });
+      // Fit map viewport to district boundary if no explicit GPS zoom was requested
+      if (explicitLat === null || explicitLng === null) {
+        const bounds = boundsFromGeometry(feature.geometry);
+        if (bounds && !bounds.isEmpty()) {
+          map.fitBounds(bounds, { top: 60, right: 20, bottom: 20, left: 20 });
+        }
       }
     }
 

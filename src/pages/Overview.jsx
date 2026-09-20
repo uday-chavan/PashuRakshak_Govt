@@ -15,6 +15,14 @@ import {
 import { getAnimalCases, getHotspotDistricts } from '../db/client.js';
 import { generateAllDiseaseAlerts } from '../services/geminiAlertService.js';
 import { startPolling, stopPolling, subscribe, resetPolling } from '../services/pollingService.js';
+import {
+  parseAnimalCaseToPin,
+  normalizeDistrictName,
+  matchDistrict,
+  DISTRICT_COORDINATES,
+  getDistrictFromCoordinates,
+  getNearestTownAndDistrict,
+} from '../data/maharashtraGeo.js';
 
 const statusPill = {
   Active: 'pill-active',
@@ -32,24 +40,11 @@ export default function Overview({ onNewCases }) {
   const [alerts, setAlerts] = useState(defaultImportantAlerts);
   const [aiAlertsLoading, setAiAlertsLoading] = useState(false);
 
-  // ── Helper: build map pins from raw cases ──────────────────────────────
-  const buildPins = useCallback((data) =>
-    data
-      .filter((c) => c.latitude && c.longitude)
-      .map((c) => ({
-        id: c.id,
-        caseRef: c.case_ref,
-        lat: parseFloat(c.latitude),
-        lng: parseFloat(c.longitude),
-        animal: c.animal,
-        village: c.village_area,
-        district: c.district,
-        disease: c.suspected_disease || c.confirmed_disease,
-        status: c.status,
-        vet: c.assigned_vet,
-        dateTime: c.date_time || c.dateTime || c.date || c.created_at,
-      })),
-  []);
+  // ── Helper: build map pins from raw cases (handles mobile coordinate formats & unswapping) ───
+  const buildPins = useCallback((data) => {
+    if (!Array.isArray(data)) return [];
+    return data.map(parseAnimalCaseToPin).filter(Boolean);
+  }, []);
 
   // ── Helper: refresh all live data from DB ─────────────────────────────
   const refreshFromDB = useCallback(async () => {
@@ -105,14 +100,33 @@ export default function Overview({ onNewCases }) {
 
       // 3. Bubble new case events up to App-level notification system
       if (onNewCases && newCases.length > 0) {
-        // Group new cases by disease for the notification payload
+        // Group new cases by disease and resolved district for the notification payload
         const diseaseMap = new Map();
         newCases.forEach((c) => {
-          const disease = c.suspected_disease || c.confirmed_disease || 'Undiagnosed Condition';
-          const district = c.district || 'Maharashtra';
-          const key = `${disease}__${district}`;
+          const rawLat = c.latitude ?? c.lat;
+          const rawLng = c.longitude ?? c.lng;
+          const { village, district } = getNearestTownAndDistrict(
+            rawLat,
+            rawLng,
+            c.village_area || c.village || c.villageArea || c.location || '',
+            c.district
+          );
+          const disease = c.suspected_disease || c.confirmed_disease || c.disease || 'General Livestock Health Distress';
+          const resolvedDist = district || 'Maharashtra';
+          const key = `${disease}__${resolvedDist}`;
+          const lat = typeof rawLat === 'number' ? rawLat : parseFloat(rawLat);
+          const lng = typeof rawLng === 'number' ? rawLng : parseFloat(rawLng);
+
           if (!diseaseMap.has(key)) {
-            diseaseMap.set(key, { disease, district, count: 0, latestDate: c.date_time });
+            diseaseMap.set(key, {
+              disease,
+              district: resolvedDist,
+              village,
+              count: 0,
+              latestDate: c.date_time || c.dateTime,
+              lat: !isNaN(lat) ? lat : null,
+              lng: !isNaN(lng) ? lng : null,
+            });
           }
           diseaseMap.get(key).count += 1;
         });
@@ -150,23 +164,73 @@ export default function Overview({ onNewCases }) {
   }, []);
 
 
-  const selectedDistrict = selected
-    ? liveDistricts.find((d) => (d.district || d.name) === (selected.district || selected.name))
+  const selectedDistrictName = typeof selected === 'string' ? selected : (selected?.district || selected?.name || '');
+  const selectedDistrict = selectedDistrictName
+    ? liveDistricts.find((d) => matchDistrict(d.district || d.name, selectedDistrictName)) || (typeof selected === 'object' ? selected : null)
     : null;
 
-  const handleViewOnMap = (districtName) => {
-    if (!districtName) return;
-    const match = liveDistricts.find(
-      (d) => (d.district || d.name || '').toLowerCase() === districtName.toLowerCase()
+  const handleViewOnMap = useCallback((target) => {
+    if (!target) return;
+    let rawDist = '';
+    let targetCoords = null;
+
+    if (typeof target === 'string') {
+      rawDist = target;
+    } else if (target && typeof target === 'object') {
+      rawDist = target.district || target.name || '';
+      if (typeof target.lat === 'number' && typeof target.lng === 'number' && !isNaN(target.lat) && !isNaN(target.lng)) {
+        targetCoords = { lat: target.lat, lng: target.lng };
+      }
+    }
+
+    const cleanDist = normalizeDistrictName(rawDist);
+
+    // If target didn't have coordinates, find in live casePins or DISTRICT_COORDINATES
+    if (!targetCoords) {
+      const matchingCase = casePins.find((p) => matchDistrict(p.district, cleanDist));
+      if (matchingCase && typeof matchingCase.lat === 'number' && !isNaN(matchingCase.lat)) {
+        targetCoords = { lat: matchingCase.lat, lng: matchingCase.lng };
+      } else {
+        const centroid = DISTRICT_COORDINATES[cleanDist] || DISTRICT_COORDINATES[rawDist];
+        if (centroid) {
+          targetCoords = { lat: centroid.lat, lng: centroid.lng };
+        }
+      }
+    }
+
+    const matchedDistrict = liveDistricts.find(
+      (d) => matchDistrict(d.district || d.name, cleanDist)
     );
-    setSelected(match || { district: districtName, name: districtName, risk: 'normal' });
+
+    const selectionObj = {
+      ...(matchedDistrict || { district: cleanDist, name: cleanDist, risk: 'normal' }),
+      district: cleanDist,
+      name: cleanDist,
+      lat: targetCoords?.lat,
+      lng: targetCoords?.lng,
+      zoom: targetCoords ? 12 : 10,
+      timestamp: Date.now(),
+    };
+
+    setSelected(selectionObj);
 
     // Smooth scroll to map card
     const mapCard = document.getElementById('overview-map-card');
     if (mapCard) {
       mapCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  };
+  }, [casePins, liveDistricts]);
+
+  // Listen for external "View on Map" triggers (e.g. from Notification Toast)
+  useEffect(() => {
+    const handleViewCaseEvent = (e) => {
+      if (e.detail) {
+        handleViewOnMap(e.detail);
+      }
+    };
+    window.addEventListener('pashurakshak:view_case', handleViewCaseEvent);
+    return () => window.removeEventListener('pashurakshak:view_case', handleViewCaseEvent);
+  }, [handleViewOnMap]);
 
   return (
     <div>
@@ -196,7 +260,7 @@ export default function Overview({ onNewCases }) {
             <LeafletMapView
               districts={liveDistricts}
               casePins={casePins}
-              selected={selectedDistrict?.district || selectedDistrict?.name}
+              selected={selected}
               height={440}
               onSelect={(d) => setSelected(d)}
               storageKey="pashurakshak_overview_map_view"
@@ -337,24 +401,35 @@ export default function Overview({ onNewCases }) {
                       No records found
                     </td>
                   </tr>
-                ) : liveRecentCases.map((c) => (
-                  <tr key={c.id}>
-                    <td className="cell-main">{c.case_ref || c.caseRef || (typeof c.id === 'string' && c.id.startsWith('CS-') ? c.id : `CS-260${c.id}`)}</td>
-                    <td>{c.animal}</td>
-                    <td>
-                      {c.village_area || c.village || c.villageArea || 'Area Sector'}
-                      <span className="cell-sub">{c.district}</span>
-                    </td>
-                    <td>
-                      <span className="pill pill-neutral">{c.confirmed_disease || c.suspected_disease || c.disease || c.suspectedDisease}</span>
-                    </td>
-                    <td>
-                      <span className={`pill ${statusPill[c.status] || 'pill-neutral'}`}>
-                        {c.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                ) : liveRecentCases.map((c) => {
+                  const { village: resolvedVillage, district: resolvedDistrict } = getNearestTownAndDistrict(
+                    c.latitude ?? c.lat,
+                    c.longitude ?? c.lng,
+                    c.village_area || c.village || c.villageArea || '',
+                    c.district
+                  );
+                  const distDisplay = resolvedDistrict;
+                  const villageDisplay = resolvedVillage;
+
+                  return (
+                    <tr key={c.id}>
+                      <td className="cell-main">{c.case_ref || c.caseRef || (typeof c.id === 'string' && c.id.startsWith('CS-') ? c.id : `CS-260${c.id}`)}</td>
+                      <td>{c.animal}</td>
+                      <td>
+                        {villageDisplay}
+                        <span className="cell-sub">{distDisplay}</span>
+                      </td>
+                      <td>
+                        <span className="pill pill-neutral">{c.confirmed_disease || c.suspected_disease || c.disease || c.suspectedDisease}</span>
+                      </td>
+                      <td>
+                        <span className={`pill ${statusPill[c.status] || 'pill-neutral'}`}>
+                          {c.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

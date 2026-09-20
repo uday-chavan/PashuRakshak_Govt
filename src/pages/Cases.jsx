@@ -15,6 +15,7 @@ import AnimatedNumber from '../components/AnimatedNumber.jsx';
 import TypewriterTitle from '../components/TypewriterTitle.jsx';
 import { caseStatusPill, cases as mockCases } from '../data/mockData.js';
 import { getAnimalCases, getCaseTimeline } from '../db/client.js';
+import { getDistrictFromCoordinates, normalizeDistrictName, getNearestTownAndDistrict } from '../data/maharashtraGeo.js';
 
 const statusFilterOptions = ['All', 'Active', 'Under Treatment', 'Resolved', 'Pending'];
 
@@ -192,15 +193,21 @@ export default function Cases() {
               {filtered.map((c) => {
                 const caseIdDisplay = c.case_ref || c.caseRef || (c.id && typeof c.id === 'string' && c.id.startsWith('CS-') ? c.id : `CS-260${c.id}`);
                 const animalDisplay = c.animal || 'Livestock';
-                const villageDisplay = c.village_area || c.village || c.villageArea || 'Area Sector';
-                const districtDisplay = c.district || 'Maharashtra';
-                const coordsDisplay = formatCoords(c.latitude, c.longitude, 4);
+                const { village: resolvedVillage, district: resolvedDistrict } = getNearestTownAndDistrict(
+                  c.latitude ?? c.lat,
+                  c.longitude ?? c.lng,
+                  c.village_area || c.village || c.villageArea || '',
+                  c.district
+                );
+                const districtDisplay = resolvedDistrict;
+                const villageDisplay = resolvedVillage;
+                const coordsDisplay = formatCoords(c.latitude ?? c.lat, c.longitude ?? c.lng, 4);
                 const diseaseDisplay = c.confirmed_disease || c.suspected_disease || c.disease || c.suspectedDisease || 'Observation';
                 const statusDisplay = c.status || 'Active';
                 const dateDisplay = formatDate(c.last_updated || c.lastUpdated || c.date_time || c.created_at);
 
                 return (
-                  <tr key={c.id || caseIdDisplay} className="clickable" onClick={() => handleSelectCase(c)}>
+                  <tr key={c.id || caseIdDisplay} className="clickable" onClick={() => handleSelectCase({ ...c, district: districtDisplay, village_area: villageDisplay })}>
                     <td className="cell-main">{caseIdDisplay}</td>
                     <td style={{ fontWeight: 600 }}>{animalDisplay}</td>
                     <td>

@@ -120,7 +120,7 @@ function AlertCard({ a, section, onViewOnMap, onOpenDetail }) {
             className="alert-compact-map-btn"
             onClick={(e) => {
               e.stopPropagation();
-              onViewOnMap(a.district);
+              onViewOnMap(a);
             }}
             title={`Zoom to ${a.district} on map`}
           >

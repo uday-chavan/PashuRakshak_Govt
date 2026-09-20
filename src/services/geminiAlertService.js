@@ -60,7 +60,10 @@ function getShortTriggerTime(latestDate = null) {
 /**
  * Builds a structured alert object based on district, disease name, case count, and trigger time.
  */
-export function createDistrictDiseaseAlert({ district, disease, count, latestDate = null }) {
+/**
+ * Builds a structured alert object based on district, disease name, case count, and trigger time.
+ */
+export function createDistrictDiseaseAlert({ district, disease, count, latestDate = null, lat = null, lng = null }) {
   const isCritical = count > 10;
   const level = isCritical ? 'critical' : 'warning';
   const shortDist = (district || 'MAH').slice(0, 3).toUpperCase();
@@ -75,6 +78,8 @@ export function createDistrictDiseaseAlert({ district, disease, count, latestDat
       disease,
       count,
       time: triggerTime,
+      lat,
+      lng,
       title: `Critical ${disease} Outbreak in ${district} (${count} Cases)`,
       desc: `High-priority disease outbreak confirmed in ${district} with ${count} active ${disease} cases. Immediate containment perimeter, animal movement restrictions, and emergency ring vaccination activated.`,
       directives: [
@@ -94,6 +99,8 @@ export function createDistrictDiseaseAlert({ district, disease, count, latestDat
     disease,
     count,
     time: triggerTime,
+    lat,
+    lng,
     title: `Emerging ${disease} Warning in ${district} (${count} Case${count > 1 ? 's' : ''})`,
     desc: `${count} active case${count > 1 ? 's' : ''} of ${disease} reported in ${district}. Field veterinary units placed on heightened surveillance with biosecurity protocols initiated.`,
     directives: [
@@ -124,12 +131,18 @@ export function generateAllDiseaseAlerts(casePins = [], liveDistricts = []) {
         disease,
         count: 0,
         latestDate: pin.dateTime || pin.date_time || pin.date || null,
+        lat: pin.lat,
+        lng: pin.lng,
       });
     }
     const c = clusterMap.get(key);
     c.count += 1;
     if (pin.dateTime || pin.date_time) {
       c.latestDate = pin.dateTime || pin.date_time;
+    }
+    if (pin.lat && pin.lng) {
+      c.lat = pin.lat;
+      c.lng = pin.lng;
     }
   });
 
@@ -147,6 +160,8 @@ export function generateAllDiseaseAlerts(casePins = [], liveDistricts = []) {
         disease,
         count: estimatedCount,
         latestDate: d.lastReported || null,
+        lat: d.latitude || d.lat || null,
+        lng: d.longitude || d.lng || null,
       });
     }
   });
@@ -158,18 +173,24 @@ export function generateAllDiseaseAlerts(casePins = [], liveDistricts = []) {
       disease: 'Foot and Mouth Disease (FMD)',
       count: 14,
       latestDate: null,
+      lat: 19.9975,
+      lng: 73.7898,
     });
     clusterMap.set('Solapur__Lumpy Skin Disease (LSD)', {
       district: 'Solapur',
       disease: 'Lumpy Skin Disease (LSD)',
       count: 7,
       latestDate: null,
+      lat: 17.6599,
+      lng: 75.9064,
     });
     clusterMap.set('Pune__Peste des Petits Ruminants (PPR)', {
       district: 'Pune',
       disease: 'Peste des Petits Ruminants (PPR)',
       count: 3,
       latestDate: null,
+      lat: 18.5204,
+      lng: 73.8567,
     });
   }
 
@@ -182,6 +203,8 @@ export function generateAllDiseaseAlerts(casePins = [], liveDistricts = []) {
         disease: cluster.disease,
         count: cluster.count,
         latestDate: cluster.latestDate,
+        lat: cluster.lat,
+        lng: cluster.lng,
       })
     );
   });

@@ -83,19 +83,19 @@ function caseIcon(status) {
     'Resolved':        '#10B981',
   };
   const labelMap = { 'Active': 'A', 'Under Treatment': 'T', 'Pending': 'P', 'Resolved': 'R' };
-  const color = colorMap[status] || '#6B7280';
-  const label = labelMap[status] || '?';
+  const color = colorMap[status] || '#DC2626';
+  const label = labelMap[status] || 'C';
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 20 20" width="20" height="20">
-      <polygon points="0,-8 8,0 0,8 -8,0" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.95"/>
-      <text x="0" y="3.5" text-anchor="middle" font-size="7" font-weight="bold" fill="white">${label}</text>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -12 24 24" width="24" height="24">
+      <polygon points="0,-10 10,0 0,10 -10,0" fill="${color}" stroke="#ffffff" stroke-width="2" opacity="0.95"/>
+      <text x="0" y="3.5" text-anchor="middle" font-size="8.5" font-weight="900" fill="white" font-family="sans-serif">${label}</text>
     </svg>`;
   return L.divIcon({
     html: svg,
-    className: '',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-    popupAnchor: [0, -12],
+    className: 'lmap-case-pin-icon',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -14],
   });
 }
 
@@ -348,13 +348,16 @@ export default function LeafletMapView({
     bufferCirclesRef.current.forEach((c) => c.remove());
     bufferCirclesRef.current = [];
 
-    // 1. Case pin markers (diamond) — lower z-index
+    // 1. Case pin markers (diamond) — placed with exact coordinates and interactive popups
     casePins.forEach((pin) => {
-      if (!pin.lat || !pin.lng) return;
-      const marker = L.marker([pin.lat, pin.lng], {
+      const lat = typeof pin.lat === 'number' ? pin.lat : parseFloat(pin.lat);
+      const lng = typeof pin.lng === 'number' ? pin.lng : parseFloat(pin.lng);
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      const marker = L.marker([lat, lng], {
         icon: caseIcon(pin.status),
-        zIndexOffset: 100,
-        title: `${pin.caseRef} — ${pin.animal}`,
+        zIndexOffset: 1200,
+        title: `${pin.caseRef} — ${pin.animal} (${pin.district})`,
       }).addTo(map);
 
       const caseHtml = `
@@ -366,12 +369,13 @@ export default function LeafletMapView({
           <div class="lmap-info-body">
             <div class="lmap-stat-row"><span class="label">Animal:</span><span class="val">${pin.animal}</span></div>
             <div class="lmap-stat-row"><span class="label">Disease:</span><span class="val danger">${pin.disease || 'Suspected'}</span></div>
-            <div class="lmap-stat-row"><span class="label">Village:</span><span class="val">${pin.village || '—'}, ${pin.district}</span></div>
+            <div class="lmap-stat-row"><span class="label">Location:</span><span class="val">${pin.village || 'Area'}, ${pin.district}</span></div>
+            <div class="lmap-stat-row"><span class="label">GPS:</span><span class="val" style="font-family:monospace;font-size:10.5px;">${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E</span></div>
             <div class="lmap-stat-row"><span class="label">Vet:</span><span class="val">${pin.vet || '—'}</span></div>
           </div>
         </div>`;
 
-      marker.bindPopup(caseHtml, { className: 'lmap-popup', maxWidth: 240 });
+      marker.bindPopup(caseHtml, { className: 'lmap-popup', maxWidth: 260 });
       markersRef.current.push(marker);
     });
 
@@ -443,7 +447,7 @@ export default function LeafletMapView({
     }, 0);
   }, [renderLayers]);
 
-  // ── District boundary polygon when selected ─────────────────────────────────
+  // ── District boundary polygon and zoom when selected ────────────────────────
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
@@ -477,45 +481,83 @@ export default function LeafletMapView({
     prevSelectedRef.current = selected;
     isFirstMountRef.current = false;
 
-    const canonicalSelected = normalizeDistrictName(
-      typeof selected === 'string' ? selected : (selected.district || selected.name || '')
-    ).toLowerCase();
+    // 1. Extract district name and explicit coordinates if available
+    const rawDist = typeof selected === 'string' ? selected : (selected.district || selected.name || '');
+    const canonicalSelected = normalizeDistrictName(rawDist);
 
-    if (maharashtraGeoJson?.features) {
-      const feature = maharashtraGeoJson.features.find((f) => {
+    let explicitLat = typeof selected === 'object' && selected ? (selected.lat ?? selected.latitude) : null;
+    let explicitLng = typeof selected === 'object' && selected ? (selected.lng ?? selected.longitude) : null;
+
+    if (explicitLat !== null && explicitLng !== null && !isNaN(Number(explicitLat)) && !isNaN(Number(explicitLng))) {
+      explicitLat = Number(explicitLat);
+      explicitLng = Number(explicitLng);
+    } else {
+      explicitLat = null;
+      explicitLng = null;
+    }
+
+    // 2. Check if a GeoJSON polygon feature exists for this district
+    let matchedFeature = null;
+    if (maharashtraGeoJson?.features && canonicalSelected) {
+      matchedFeature = maharashtraGeoJson.features.find((f) => {
         const p = f.properties || {};
         const raw = p.DISTRICT || p.district || p.NAME_2 || p.NAME || p.name || '';
-        return normalizeDistrictName(raw).toLowerCase() === canonicalSelected;
+        return normalizeDistrictName(raw).toLowerCase() === canonicalSelected.toLowerCase();
       });
+    }
 
-      if (feature) {
-        const layer = L.geoJSON(feature, {
-          style: {
-            color: '#10b981',
-            weight: 3.5,
-            opacity: 1,
-            fillColor: '#10b981',
-            fillOpacity: 0.22,
-          },
-        }).addTo(map);
+    if (matchedFeature) {
+      const layer = L.geoJSON(matchedFeature, {
+        style: {
+          color: '#10b981',
+          weight: 3.5,
+          opacity: 1,
+          fillColor: '#10b981',
+          fillOpacity: 0.22,
+        },
+      }).addTo(map);
 
-        districtPolygonRef.current = layer;
-        layer.bringToFront();
+      districtPolygonRef.current = layer;
+      layer.bringToFront();
 
-        // Smoothly fit map to district boundary
+      // If explicit GPS coordinates were provided (e.g. from notification alert case pin), zoom in directly!
+      if (explicitLat !== null && explicitLng !== null) {
+        map.flyTo([explicitLat, explicitLng], typeof selected === 'object' && selected?.zoom ? selected.zoom : 12, { duration: 1.0 });
+      } else {
         try {
           map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 11 });
         } catch {
-          const coord = DISTRICT_COORDINATES[selected] || DISTRICT_COORDINATES[normalizeDistrictName(selected)];
-          if (coord) map.setView([coord.lat, coord.lng], 10);
+          const coord = DISTRICT_COORDINATES[canonicalSelected] || DISTRICT_COORDINATES[rawDist];
+          if (coord) map.flyTo([coord.lat, coord.lng], 10, { duration: 1.0 });
         }
-        return;
+      }
+    } else {
+      // 3. Fallback to explicit coords or DISTRICT_COORDINATES centroid
+      const fallbackCoord = (explicitLat !== null && explicitLng !== null)
+        ? { lat: explicitLat, lng: explicitLng, zoom: 12 }
+        : (DISTRICT_COORDINATES[canonicalSelected] || DISTRICT_COORDINATES[rawDist]);
+
+      if (fallbackCoord) {
+        map.flyTo([fallbackCoord.lat, fallbackCoord.lng], fallbackCoord.zoom || 10, { duration: 1.0 });
       }
     }
 
-    // Centroid fallback if no feature matched
-    const coord = DISTRICT_COORDINATES[selected] || DISTRICT_COORDINATES[normalizeDistrictName(selected)];
-    if (coord) map.setView([coord.lat, coord.lng], 10);
+    // 4. If any case marker matches the target coordinates or district, automatically open its popup
+    if (markersRef.current && markersRef.current.length > 0) {
+      setTimeout(() => {
+        const targetMarker = markersRef.current.find((m) => {
+          const latLng = m.getLatLng();
+          if (explicitLat !== null && explicitLng !== null) {
+            return Math.abs(latLng.lat - explicitLat) < 0.005 && Math.abs(latLng.lng - explicitLng) < 0.005;
+          }
+          const title = (m.options?.title || '').toLowerCase();
+          return canonicalSelected && title.includes(canonicalSelected.toLowerCase());
+        });
+        if (targetMarker && typeof targetMarker.openPopup === 'function') {
+          targetMarker.openPopup();
+        }
+      }, 400);
+    }
   }, [selected, storageKey]);
 
   const resetView = useCallback(() => {
