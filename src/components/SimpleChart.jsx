@@ -39,7 +39,16 @@ function SimpleTooltip({ active, payload, label }) {
 // Simple line chart used where a chart is genuinely useful.
 export default function SimpleChart({ data, lines, height = 240 }) {
   return (
-    <div style={{ height }}>
+    <div
+      style={{
+        height,
+        border: '1.5px solid #000000',
+        borderRadius: 10,
+        background: '#ffffff',
+        padding: '10px 10px 4px 4px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      }}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 6, right: 12, left: -12, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 4" stroke="#e8f0ea" vertical={false} />

@@ -131,7 +131,7 @@ export default function DiseaseActivityChart({ data, height = 300 }) {
         </div>
       </div>
 
-      <div style={{ height }}>
+      <div className="dac-chart-container" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 12, right: 14, left: -10, bottom: 0 }}>
             <defs>
