@@ -4,4 +4,9 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: ['pashurakshak-govt-2.onrender.com']
+  }
 })

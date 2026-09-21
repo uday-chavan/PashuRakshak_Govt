@@ -195,3 +195,36 @@
 .lmap-district-tooltip::before {
   border-top-color: rgba(15, 23, 42, 0.9) !important;
 }
+
+/* Mobile responsive adjustments */
+@media (max-width: 600px) {
+  .lmap-controls {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+
+  .lmap-btn-group {
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .lmap-btn {
+    padding: 4px 7px;
+    font-size: 10.5px;
+    gap: 3px;
+  }
+
+  .lmap-btn span {
+    font-size: 10.5px;
+  }
+
+  .lmap-status {
+    bottom: 8px;
+    left: 8px;
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+}
+

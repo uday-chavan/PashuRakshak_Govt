@@ -133,7 +133,7 @@ export default function DiseaseActivityChart({ data, height = 300 }) {
 
       <div className="dac-chart-container" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 12, right: 14, left: -10, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="gradCases" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%"  stopColor="#059669" stopOpacity={0.22} />
@@ -156,17 +156,29 @@ export default function DiseaseActivityChart({ data, height = 300 }) {
               label={{ value: '▲ Peak', fill: '#059669', fontSize: 9.5, position: 'insideTopLeft' }}
             />
 
-            <XAxis dataKey="month" tick={{ fontSize: 11.5, fill: '#6b7c74' }} axisLine={false} tickLine={false} />
-            <YAxis yAxisId="left"  tick={{ fontSize: 11, fill: '#6b7c74' }} axisLine={false} tickLine={false} />
+            <XAxis
+              dataKey="month"
+              tick={{ fontSize: 10.5, fill: '#6b7c74' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              yAxisId="left"
+              tick={{ fontSize: 10, fill: '#6b7c74' }}
+              axisLine={false}
+              tickLine={false}
+              width={34}
+            />
             <YAxis
               yAxisId="right"
               orientation="right"
-              tick={{ fontSize: 11, fill: '#6b7c74' }}
+              tick={{ fontSize: 10, fill: '#6b7c74' }}
               axisLine={false}
               tickLine={false}
               domain={[0, 100]}
               tickFormatter={(v) => `${v}%`}
-              tickCount={5}
+              tickCount={4}
+              width={32}
             />
 
             <Tooltip content={<RichTooltip />} />

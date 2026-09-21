@@ -96,8 +96,19 @@ export default function HotspotMap({ onNavigate }) {
   const [mode, setMode] = useState('cases');
   const [selected, setSelected] = useState(null);
   const [panelWidth, setPanelWidth] = useState(310);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 900 : false));
+  const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'intel' | 'watchlist'
   const bodyRef = useRef(null);
   const isDragging = useRef(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 900;
+      setIsMobile(mobile);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const startResize = useCallback((e) => {
     e.preventDefault();
@@ -226,7 +237,7 @@ export default function HotspotMap({ onNavigate }) {
     };
   }, [selected, filterable]);
 
-  const handleSelect = (r) => {
+  const handleSelect = (r, switchToIntel = false) => {
     if (!r) {
       setSelected(null);
       setDistrictFilter('');
@@ -236,6 +247,9 @@ export default function HotspotMap({ onNavigate }) {
     const d = filterable.find((x) => matchDistrict(x.district || x.name, distName));
     setSelected(d || { district: distName, name: distName, risk: 'normal' });
     setDistrictFilter(distName);
+    if (isMobile && switchToIntel) {
+      setMobileTab('intel');
+    }
   };
 
   // Escape key listener to clear selection & return map to default
@@ -343,70 +357,170 @@ export default function HotspotMap({ onNavigate }) {
           </div>
         </div>
 
-        {/* ---------- Body ---------- */}
-        <div className="hm-body" ref={bodyRef} style={{ gridTemplateColumns: `minmax(0, 1fr) 5px ${panelWidth}px` }}>
-          <div className="hm-map-column">
-            <MapErrorBoundary height={500}>
-              <LeafletMapView
-                districts={filtered}
-                casePins={casePins}
-                selected={selectedFull?.district || selectedFull?.name}
-                onSelect={handleSelect}
-                mode={mode}
-                height={500}
-                storageKey="pashurakshak_hotspot_map_view"
-              />
-            </MapErrorBoundary>
-
-            <div className="hm-map-footer">
-              <div className="hm-legend">
-                {legendItems.map((l) => (
-                  <span className="hm-lg" key={l.label}>
-                    <span className="dot" style={{ background: l.color }} /> {l.label}
-                  </span>
-                ))}
-              </div>
-              <div className="hm-summary">
-                {mode === 'vaccination'
-                  ? `${filtered.length} districts monitored`
-                  : `${filtered.length} districts tracked · ${casePins.length} live case pins`}
-              </div>
-            </div>
-
-            {/* ---------- Areas needing attention ---------- */}
-            <div className="hm-attention">
-              <div className="hm-attention-title">Hotspots &amp; Active Watchlist</div>
-              {dynamicAttentionAreas.map((a) => {
-                const full = filterable.find((d) => matchDistrict(d.district || d.name, a.district));
-                const isCurrent = selectedFull && matchDistrict(selectedFull.district || selectedFull.name, a.district);
-                return (
-                  <button
-                    key={a.district}
-                    className={`hm-attention-item ${isCurrent ? 'active' : ''}`}
-                    onClick={() => handleSelect(full || a.district)}
-                  >
-                    <span
-                      className="hm-attention-dot"
-                      style={{ background: (RISK_STYLE[a.risk] || {}).color || '#059669' }}
-                    />
-                    <span className="hm-attention-name">{a.district}</span>
-                    <span className="hm-attention-note">{a.note}</span>
-                    <span
-                      className={`hm-attention-view ${isCurrent ? 'active' : ''}`}
-                    >
-                      Inspect
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+        {/* Mobile View Switcher */}
+        {isMobile && (
+          <div className="hm-mobile-nav">
+            <button
+              type="button"
+              className={`hm-mobile-tab-btn ${mobileTab === 'map' ? 'active' : ''}`}
+              onClick={() => setMobileTab('map')}
+            >
+              <MapPin size={14} />
+              <span>Map</span>
+            </button>
+            <button
+              type="button"
+              className={`hm-mobile-tab-btn ${mobileTab === 'intel' ? 'active' : ''}`}
+              onClick={() => setMobileTab('intel')}
+            >
+              <Activity size={14} />
+              <span>
+                Intel {selectedFull ? `(${selectedFull.district || selectedFull.name})` : ''}
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`hm-mobile-tab-btn ${mobileTab === 'watchlist' ? 'active' : ''}`}
+              onClick={() => setMobileTab('watchlist')}
+            >
+              <AlertTriangle size={14} />
+              <span>Watchlist ({dynamicAttentionAreas.length})</span>
+            </button>
           </div>
+        )}
 
-          {/* ---------- Resizer ---------- */}
-          <div className="hm-resizer" onMouseDown={startResize} title="Drag to resize" />
+        {/* ---------- Body ---------- */}
+        <div
+          className={`hm-body ${isMobile ? 'hm-body-mobile' : ''}`}
+          ref={bodyRef}
+          style={!isMobile ? { gridTemplateColumns: `minmax(0, 1fr) 5px ${panelWidth}px` } : undefined}
+        >
+          {/* Map Column (always visible on desktop, or when mobileTab === 'map' on mobile) */}
+          {(!isMobile || mobileTab === 'map') && (
+            <div className="hm-map-column">
+              <MapErrorBoundary height={isMobile ? 380 : 500}>
+                <LeafletMapView
+                  districts={filtered}
+                  casePins={casePins}
+                  selected={selectedFull?.district || selectedFull?.name}
+                  onSelect={(r) => handleSelect(r, false)}
+                  mode={mode}
+                  height={isMobile ? 380 : 500}
+                  storageKey="pashurakshak_hotspot_map_view"
+                />
+              </MapErrorBoundary>
 
-          {/* ---------- District intelligence panel ---------- */}
-          <aside className="hm-detail-panel">
+              {/* Mobile Quick Selection Banner */}
+              {isMobile && selectedFull && (
+                <div className="hm-mobile-quick-intel">
+                  <div className="hm-quick-intel-left">
+                    <span className="hm-quick-dot" style={{ background: (RISK_STYLE[selectedFull.risk] || {}).color || '#059669' }} />
+                    <div>
+                      <div className="hm-quick-title">{selectedFull.district || selectedFull.name}</div>
+                      <div className="hm-quick-sub">{selectedFull.disease && selectedFull.disease !== 'None' ? selectedFull.disease : 'Routine Monitoring'} · {districtCases.length} Cases</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="hm-quick-btn"
+                    onClick={() => setMobileTab('intel')}
+                  >
+                    <span>View Intel</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+
+              <div className="hm-map-footer">
+                <div className="hm-legend">
+                  {legendItems.map((l) => (
+                    <span className="hm-lg" key={l.label}>
+                      <span className="dot" style={{ background: l.color }} /> {l.label}
+                    </span>
+                  ))}
+                </div>
+                <div className="hm-summary">
+                  {mode === 'vaccination'
+                    ? `${filtered.length} districts monitored`
+                    : `${filtered.length} districts tracked · ${casePins.length} live case pins`}
+                </div>
+              </div>
+
+              {/* Desktop Areas needing attention (shown below map on desktop, or under 'watchlist' tab on mobile) */}
+              {!isMobile && (
+                <div className="hm-attention">
+                  <div className="hm-attention-title">Hotspots &amp; Active Watchlist</div>
+                  {dynamicAttentionAreas.map((a) => {
+                    const full = filterable.find((d) => matchDistrict(d.district || d.name, a.district));
+                    const isCurrent = selectedFull && matchDistrict(selectedFull.district || selectedFull.name, a.district);
+                    return (
+                      <button
+                        key={a.district}
+                        className={`hm-attention-item ${isCurrent ? 'active' : ''}`}
+                        onClick={() => handleSelect(full || a.district)}
+                      >
+                        <span
+                          className="hm-attention-dot"
+                          style={{ background: (RISK_STYLE[a.risk] || {}).color || '#059669' }}
+                        />
+                        <span className="hm-attention-name">{a.district}</span>
+                        <span className="hm-attention-note">{a.note}</span>
+                        <span
+                          className={`hm-attention-view ${isCurrent ? 'active' : ''}`}
+                        >
+                          Inspect
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Watchlist Tab (on mobile when mobileTab === 'watchlist') */}
+          {isMobile && mobileTab === 'watchlist' && (
+            <div className="hm-mobile-watchlist-view">
+              <div className="hm-watchlist-header">
+                <h3>Active Hotspots &amp; High-Priority Districts</h3>
+                <p>Select any district below to open full epidemiology metrics and village cases.</p>
+              </div>
+              <div className="hm-attention hm-attention-standalone">
+                {dynamicAttentionAreas.map((a) => {
+                  const full = filterable.find((d) => matchDistrict(d.district || d.name, a.district));
+                  const isCurrent = selectedFull && matchDistrict(selectedFull.district || selectedFull.name, a.district);
+                  return (
+                    <button
+                      key={a.district}
+                      className={`hm-attention-item ${isCurrent ? 'active' : ''}`}
+                      onClick={() => handleSelect(full || a.district, true)}
+                    >
+                      <span
+                        className="hm-attention-dot"
+                        style={{ background: (RISK_STYLE[a.risk] || {}).color || '#059669' }}
+                      />
+                      <div className="hm-attention-info">
+                        <span className="hm-attention-name">{a.district}</span>
+                        <span className="hm-attention-note">{a.note}</span>
+                      </div>
+                      <span className="hm-attention-view">
+                        View Intel
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ---------- Resizer (desktop only) ---------- */}
+          {!isMobile && (
+            <div className="hm-resizer" onMouseDown={startResize} title="Drag to resize" />
+          )}
+
+          {/* ---------- District intelligence panel (desktop or mobileTab === 'intel') ---------- */}
+          {(!isMobile || mobileTab === 'intel') && (
+            <aside className="hm-detail-panel">
             {selectedFull ? (
               <div className="hm-detail hm-intel">
                 <div className="hm-detail-head">
@@ -557,6 +671,7 @@ export default function HotspotMap({ onNavigate }) {
               </div>
             )}
           </aside>
+          )}
         </div>
       </div>
     </div>

@@ -1,0 +1,243 @@
+/* ============================================================
+   Desktop Notice / Screen Advisory Banner & Floating Pill
+   ============================================================ */
+
+.desktop-notice-banner {
+  background: linear-gradient(135deg, #042f24 0%, #064e3b 100%);
+  color: #ffffff;
+  border-bottom: 1.5px solid #059669;
+  box-shadow: 0 4px 12px rgba(4, 47, 36, 0.25);
+  position: relative;
+  z-index: 50;
+  animation: noticeSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes noticeSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.desktop-notice-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.desktop-notice-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.desktop-notice-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  border-radius: 8px;
+  color: #6ee7b7;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.desktop-notice-alert-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  background: #f59e0b;
+  color: #042f24;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #042f24;
+}
+
+.desktop-notice-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.desktop-notice-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.desktop-notice-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.desktop-notice-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  background: rgba(245, 158, 11, 0.25);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 4px;
+}
+
+.desktop-notice-desc {
+  font-size: 12px;
+  color: #d1fae5;
+  margin: 2px 0 0 0;
+  line-height: 1.4;
+}
+
+.desktop-notice-details {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.desktop-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #a7f3d0;
+}
+
+.desktop-detail-item strong {
+  color: #ffffff;
+}
+
+.desktop-notice-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.desktop-notice-btn-details {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.desktop-notice-btn-details:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.desktop-notice-btn-dismiss {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #10b981;
+  border: 1px solid #34d399;
+  color: #042f24;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.desktop-notice-btn-dismiss:hover {
+  background: #34d399;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+}
+
+/* Floating pill when dismissed on mobile */
+.desktop-notice-pill {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #042f24;
+  border: 1px solid #10b981;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  animation: pillPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: all 0.2s ease;
+}
+
+.desktop-notice-pill:hover {
+  background: #064e3b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.notice-pill-icon {
+  color: #34d399;
+}
+
+.notice-pill-info {
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
+@keyframes pillPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 680px) {
+  .desktop-notice-container {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .desktop-notice-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}

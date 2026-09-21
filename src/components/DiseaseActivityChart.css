@@ -199,3 +199,54 @@
   background: #d1fae5;
   color: #065f46;
 }
+
+/* ─── Mobile Responsive ─────────────────────────────────── */
+@media (max-width: 600px) {
+  .dac-legend {
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dac-leg-btn {
+    font-size: 11px;
+    padding: 3px 8px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .dac-kpi-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 8px;
+    background: var(--surface, #f8fafc);
+  }
+
+  .dac-kpi-sep {
+    display: none;
+  }
+
+  .dac-kpi {
+    background: #ffffff;
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: 6px;
+    padding: 6px 10px;
+    align-items: flex-start;
+  }
+
+  .dac-kpi-v {
+    font-size: 15px;
+  }
+
+  .dac-kpi-k {
+    font-size: 9.5px;
+  }
+
+  .dac-chart-container {
+    padding: 6px 4px 2px 0px;
+    border-radius: 8px;
+  }
+}
+

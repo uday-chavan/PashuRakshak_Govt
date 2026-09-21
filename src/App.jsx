@@ -12,6 +12,7 @@ import Vaccination from './pages/Vaccination.jsx';
 import Laboratory from './pages/Laboratory.jsx';
 import Alerts from './pages/Alerts.jsx';
 import NotificationToast from './components/NotificationToast.jsx';
+import DesktopNotice from './components/DesktopNotice.jsx';
 
 const PAGES = {
   overview: Overview,
@@ -90,6 +91,7 @@ export default function App() {
         onCloseMobile={() => setMobileOpen(false)}
       />
       <div className="app-body">
+        <DesktopNotice />
         <Topbar
           page={page}
           onMenu={handleToggleSidebar}

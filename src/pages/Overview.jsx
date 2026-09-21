@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, MapPin, ChevronRight } from 'lucide-react';
 import StatCard from '../components/StatCard.jsx';
 import TypewriterTitle from '../components/TypewriterTitle.jsx';
 import DiseaseActivityChart from '../components/DiseaseActivityChart.jsx';
@@ -377,7 +377,8 @@ export default function Overview({ onNewCases }) {
               </div>
             </div>
           </div>
-          <div className="table-wrap">
+          {/* Desktop Table View */}
+          <div className="table-wrap recent-cases-desktop-table">
             <table className="dash-table">
               <thead>
                 <tr>
@@ -432,6 +433,57 @@ export default function Overview({ onNewCases }) {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Case Cards View */}
+          <div className="recent-cases-mobile-list">
+            {casesLoading ? (
+              <div className="cases-mobile-empty">Loading live records from database…</div>
+            ) : liveRecentCases.length === 0 ? (
+              <div className="cases-mobile-empty">No records found</div>
+            ) : (
+              liveRecentCases.map((c) => {
+                const { village: resolvedVillage, district: resolvedDistrict } = getNearestTownAndDistrict(
+                  c.latitude ?? c.lat,
+                  c.longitude ?? c.lng,
+                  c.village_area || c.village || c.villageArea || '',
+                  c.district
+                );
+                const caseId = c.case_ref || c.caseRef || (typeof c.id === 'string' && c.id.startsWith('CS-') ? c.id : `CS-260${c.id}`);
+                const disease = c.confirmed_disease || c.suspected_disease || c.disease || c.suspectedDisease;
+
+                return (
+                  <div
+                    key={c.id}
+                    className="recent-case-mobile-card"
+                    onClick={() => handleViewOnMap(c)}
+                  >
+                    <div className="rc-card-top">
+                      <span className="rc-case-id">{caseId}</span>
+                      <span className={`pill ${statusPill[c.status] || 'pill-neutral'}`}>
+                        {c.status}
+                      </span>
+                    </div>
+                    <div className="rc-card-body">
+                      <div className="rc-animal-disease">
+                        <span className="rc-animal-name">{c.animal}</span>
+                        <span className="rc-dot-sep">·</span>
+                        <span className="rc-disease-name">{disease}</span>
+                      </div>
+                      <div className="rc-location">
+                        <MapPin size={12} className="rc-pin-ic" />
+                        <span>{resolvedVillage}, <strong>{resolvedDistrict}</strong></span>
+                      </div>
+                    </div>
+                    <div className="rc-card-foot">
+                      <span className="rc-view-map-link">
+                        Locate on Map <ChevronRight size={13} />
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
